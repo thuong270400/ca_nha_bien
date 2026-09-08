@@ -1,0 +1,75 @@
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED'
+export type PaymentMethod = 'COD' | 'VNPAY' | 'MOMO' | 'ZALOPAY'
+export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'
+
+export interface OrderItemView {
+  id: string
+  orderId: string
+  productId: string
+  variantId: string
+  productName: string
+  unit: string
+  price: string
+  quantity: number
+  lineTotal: string
+}
+
+export interface PaymentView {
+  id: string
+  orderId: string
+  method: PaymentMethod
+  status: PaymentStatus
+  amount: string
+  transactionId: string | null
+  paidAt: string | null
+}
+
+export interface ShippingView {
+  id: string
+  orderId: string
+  carrier: string | null
+  trackingNumber: string | null
+  fee: string
+  shippedAt: string | null
+  deliveredAt: string | null
+}
+
+export interface OrderView {
+  id: string
+  orderNumber: string
+  userId: string | null
+  status: OrderStatus
+  subtotal: string
+  shippingFee: string
+  total: string
+  couponCode: string | null
+  discountAmount: string
+  paymentMethod: PaymentMethod
+  paymentStatus: PaymentStatus
+  recipientName: string
+  recipientPhone: string
+  province: string
+  district: string
+  ward: string
+  addressLine: string
+  note: string | null
+  addressId: string | null
+  createdAt: string
+  updatedAt: string
+  items: OrderItemView[]
+  payment: PaymentView | null
+  shipping: ShippingView | null
+}
+
+export interface AddressView {
+  id: string
+  userId: string
+  fullName: string
+  phone: string
+  province: string
+  district: string
+  ward: string
+  addressLine: string
+  note: string | null
+  isDefault: boolean
+}

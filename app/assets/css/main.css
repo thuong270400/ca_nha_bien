@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand palette (docs/ROADMAP.md): "ocean" = Primary (Xanh dương đậm),
+     anchored at #0B5ED7 (600) and #023E8A (900) — the two candidates from
+     the roadmap table, used as two shades of the same color rather than
+     picking one. */
+  --color-ocean-50: #f0f6ff;
+  --color-ocean-100: #dcebfe;
+  --color-ocean-200: #b5d3fd;
+  --color-ocean-300: #7fb3fb;
+  --color-ocean-400: #4390f9;
+  --color-ocean-500: #086df7;
+  --color-ocean-600: #0B5ED7;
+  --color-ocean-700: #054aa8;
+  --color-ocean-800: #043b85;
+  --color-ocean-900: #023E8A;
+  --color-ocean-950: #021c40;
+
+  /* "ice" = Accent (Xanh cyan/băng), anchored at #48CAE4 (400) and
+     #90E0EF (200) — same two-candidates-as-two-shades approach. */
+  --color-ice-50: #f2fbfd;
+  --color-ice-100: #e0f6fa;
+  --color-ice-200: #90E0EF;
+  --color-ice-300: #8bdeee;
+  --color-ice-400: #48CAE4;
+  --color-ice-500: #20c0df;
+  --color-ice-600: #1ba1bb;
+  --color-ice-700: #168297;
+  --color-ice-800: #126878;
+  --color-ice-900: #0d4d59;
+  --color-ice-950: #08323a;
+}
