@@ -1,0 +1,31 @@
+# Reference only — Nginx here runs on the HOST (outside Docker), per the
+# deployment plan. This file is not read by docker-compose.yml or any
+# container; copy the relevant server block into /etc/nginx/sites-available/
+# on the Ubuntu host and adjust the domain/cert paths.
+#
+# It proxies to the "app" container's port, published to 127.0.0.1 only
+# (see docker-compose.yml's "app.ports": "127.0.0.1:${APP_PORT}:3000") —
+# so the app is never reachable except through this proxy.
+
+server {
+    listen 80;
+    server_name your-domain.example;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name your-domain.example;
+
+    ssl_certificate     /etc/letsencrypt/live/your-domain.example/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.example/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

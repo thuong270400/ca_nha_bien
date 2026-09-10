@@ -1,0 +1,45 @@
+# Never ship host-built artifacts — they must be rebuilt fresh inside the
+# Linux build stage (the dev host here is Windows; a copied node_modules or
+# server/generated/prisma would carry Windows-specific Prisma binaries).
+node_modules
+.output
+.nuxt
+.nitro
+.cache
+dist
+/server/generated/prisma
+
+# VCS / editor / tooling metadata
+.git
+.gitignore
+.github
+.vscode
+.idea
+.fleet
+.windsurf
+.agents
+.claude
+
+# Secrets — never sent to the Docker build context
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Runtime-written uploads (unused now that images live in R2, see
+# server/services/upload.service.ts, but keep excluded regardless)
+uploads
+
+# Deployment files that only the host / postgres container need, not the app image
+docker
+deploy
+docker-compose.yml
+docker-compose.*.yml
+
+# Docs / misc, not needed inside the image
+docs
+README.md
+CLAUDE.md
+*.log
+logs
+.DS_Store

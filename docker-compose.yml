@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      # Read by docker/postgres/init/01-init-schema.sh on first init only.
+      DB_SCHEMA: ${DB_SCHEMA}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # Deliberately no "ports:" — Postgres is reachable only from other
+    # containers on the "internal" network, never from the host or Internet.
+
+  app:
+    image: fiship-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    ports:
+      # Bound to loopback only: Nginx (running on the host, outside Docker)
+      # reverse-proxies to this. Never publish 0.0.0.0 here.
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  pgdata:
