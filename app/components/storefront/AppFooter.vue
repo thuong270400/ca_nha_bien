@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const year = new Date().getFullYear()
+const { contact } = useAppConfig()
 </script>
 
 <template>
@@ -65,13 +66,13 @@ const year = new Date().getFullYear()
             </h3>
             <ul class="space-y-2 text-sm text-muted">
               <li class="flex items-center gap-2">
-                <UIcon name="i-lucide-phone" class="size-4" /> 1900 1234
+                <UIcon name="i-lucide-phone" class="size-4" /> {{ contact.hotline }}
               </li>
               <li class="flex items-center gap-2">
-                <UIcon name="i-lucide-mail" class="size-4" /> hotro@fiship.vn
+                <UIcon name="i-lucide-mail" class="size-4" /> {{ contact.email }}
               </li>
               <li class="flex items-center gap-2">
-                <UIcon name="i-lucide-map-pin" class="size-4" /> TP. Hồ Chí Minh, Việt Nam
+                <UIcon name="i-lucide-map-pin" class="size-4" /> {{ contact.address }}
               </li>
             </ul>
           </div>

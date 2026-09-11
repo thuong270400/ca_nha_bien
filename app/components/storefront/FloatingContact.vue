@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { contact } = useAppConfig()
 const { y } = useWindowScroll()
 const showScrollTop = computed(() => y.value > 400)
 
@@ -28,7 +29,7 @@ function scrollToTop() {
     </Transition>
 
     <UButton
-      to="https://zalo.me/19001234"
+      :to="`https://zalo.me/${contact.hotline}`"
       target="_blank"
       rel="noopener noreferrer"
       icon="i-simple-icons-zalo"

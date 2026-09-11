@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const toast = useToast()
 const sending = ref(false)
+const { contact } = useAppConfig()
 
 const form = reactive({
   name: '',
@@ -54,7 +55,7 @@ useCanonical('/contact')
               Hotline
             </p>
             <p class="font-medium text-highlighted">
-              1900 1234
+              {{ contact.hotline }}
             </p>
           </div>
         </div>
@@ -65,7 +66,7 @@ useCanonical('/contact')
               Email
             </p>
             <p class="font-medium text-highlighted">
-              hotro@fiship.vn
+              {{ contact.email }}
             </p>
           </div>
         </div>
@@ -76,7 +77,7 @@ useCanonical('/contact')
               Địa chỉ
             </p>
             <p class="font-medium text-highlighted">
-              TP. Hồ Chí Minh, Việt Nam
+              {{ contact.address }}
             </p>
           </div>
         </div>

@@ -23,7 +23,7 @@ useCanonical('/')
 
 <template>
   <div>
-    <section v-if="data?.banners.length" class="bg-gradient-to-br from-sky-50 to-white">
+    <section v-if="data?.banners.length" class="bg-gradient-to-br from-sky-50 to-white dark:from-ocean-950 dark:to-gray-950">
       <UCarousel
         v-slot="{ item }"
         :items="data.banners"
@@ -57,7 +57,7 @@ useCanonical('/')
       </UCarousel>
     </section>
 
-    <section v-else class="bg-gradient-to-br from-sky-50 to-white">
+    <section v-else class="bg-gradient-to-br from-sky-50 to-white dark:from-ocean-950 dark:to-gray-950">
       <UContainer class="grid items-center gap-8 py-12 lg:grid-cols-2 lg:py-20">
         <div>
           <UBadge color="primary" variant="subtle" class="mb-4">

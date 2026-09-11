@@ -12,6 +12,7 @@ const wishlistStore = useWishlistStore()
 await Promise.all([cartStore.ensureLoaded(), wishlistStore.ensureLoaded()])
 
 const router = useRouter()
+const { contact } = useAppConfig()
 
 const navItems = computed(() => [
   { label: 'Tất cả sản phẩm', to: '/products' },
@@ -33,9 +34,9 @@ async function logout() {
           <span class="pr-16" aria-hidden="true">Cá tươi, hải sản tươi sống đánh bắt trong ngày — giao tận nhà mỗi sáng.</span>
         </div>
       </div>
-      <a href="tel:19001234" class="flex shrink-0 items-center gap-1.5 font-medium text-primary hover:underline">
+      <a :href="`tel:${contact.hotline}`" class="flex shrink-0 items-center gap-1.5 font-medium text-primary hover:underline">
         <UIcon name="i-lucide-phone" class="size-3.5" />
-        Hotline: 1900 1234
+        Hotline: {{ contact.hotline }}
       </a>
     </UContainer>
   </div>
