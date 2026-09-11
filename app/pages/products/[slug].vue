@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProductDetail } from '#shared/types/catalog'
+import type { Product, ProductDetail } from '#shared/types/catalog'
 
 const route = useRoute()
 const slug = route.params.slug as string
@@ -35,13 +35,22 @@ watch(selectedVariantId, () => { quantity.value = 1 })
 
 const cartStore = useCartStore()
 const wishlistStore = useWishlistStore()
-const { loggedIn } = useUserSession()
+const { loggedIn, user } = useUserSession()
 const router = useRouter()
 const toast = useToast()
 const adding = ref(false)
 const wishlisting = ref(false)
+const editOpen = ref(false)
 
+const isAdmin = computed(() => user.value?.role === 'ADMIN')
 const isWishlisted = computed(() => product.value ? wishlistStore.has(product.value.id) : false)
+
+function onProductUpdated(updated: Product) {
+  if (!product.value) return
+  Object.assign(product.value, updated)
+  selectedVariantId.value = product.value.variants.find(v => v.isDefault)?.id ?? product.value.variants[0]?.id
+  selectedImageIndex.value = 0
+}
 
 async function onToggleWishlist() {
   if (!product.value) return
@@ -138,12 +147,26 @@ useHead(() => ({
       </div>
 
       <div>
-        <p class="text-sm text-muted">
-          {{ product.category.name }}
-        </p>
-        <h1 class="mt-1 text-2xl font-bold text-highlighted">
-          {{ product.name }}
-        </h1>
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-sm text-muted">
+              {{ product.category.name }}
+            </p>
+            <h1 class="mt-1 text-2xl font-bold text-highlighted">
+              {{ product.name }}
+            </h1>
+          </div>
+          <UButton
+            v-if="isAdmin"
+            icon="i-lucide-pencil"
+            size="sm"
+            variant="soft"
+            color="primary"
+            @click="editOpen = true"
+          >
+            Chỉnh sửa
+          </UButton>
+        </div>
         <p v-if="product.origin" class="mt-1 flex items-center gap-1 text-sm text-muted">
           <UIcon name="i-lucide-map-pin" class="size-4" /> Nguồn gốc: {{ product.origin }}
         </p>
@@ -242,6 +265,13 @@ useHead(() => ({
       :product-key="`product-${slug}`"
       :avg-rating="product.avgRating"
       :review-count="product.reviewCount"
+    />
+
+    <StorefrontProductEditDialog
+      v-if="isAdmin"
+      v-model:open="editOpen"
+      :product="product"
+      @updated="onProductUpdated"
     />
   </UContainer>
 </template>

@@ -8,6 +8,6 @@ export default defineAppConfig({
   contact: {
     hotline: '0357059294',
     email: 'canhabien78@gmail.com',
-    address: '30/11 Lê Lợi, TP. Tuy Hòa, Đắk Lắk, Việt Nam',
+    address: 'Khu phố Thanh Đức, phường Bình Kiến, Đắk Lắk (Phú Yên cũ)',
   },
 })

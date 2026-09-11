@@ -1,15 +1,27 @@
 <script setup lang="ts">
 import type { Product } from '#shared/types/catalog'
 
-const { product } = defineProps<{ product: Product }>()
+const props = defineProps<{ product: Product }>()
 
-const { loggedIn } = useUserSession()
+const { loggedIn, user } = useUserSession()
 const wishlistStore = useWishlistStore()
 const router = useRouter()
 const wishlisting = ref(false)
 const quickBuyOpen = ref(false)
+const editOpen = ref(false)
 
-const isWishlisted = computed(() => wishlistStore.has(product.id))
+const isAdmin = computed(() => user.value?.role === 'ADMIN')
+
+// Local copy so a save in ProductEditDialog updates this card immediately
+// without needing the parent list to refetch.
+const product = ref<Product>(props.product)
+watch(() => props.product, (p) => { product.value = p })
+
+function onProductUpdated(updated: Product) {
+  product.value = updated
+}
+
+const isWishlisted = computed(() => wishlistStore.has(product.value.id))
 
 async function onToggleWishlist() {
   if (!loggedIn.value) {
@@ -18,19 +30,19 @@ async function onToggleWishlist() {
   }
   wishlisting.value = true
   try {
-    await wishlistStore.toggle(product.id)
+    await wishlistStore.toggle(product.value.id)
   } finally {
     wishlisting.value = false
   }
 }
 
-const defaultVariant = computed(() => product.variants.find(v => v.isDefault) ?? product.variants[0])
-const coverImage = computed(() => product.images[0]?.url ?? '/images/placeholder-fish.svg')
-const hoverImage = computed(() => product.images[1]?.url ?? null)
-const totalStock = computed(() => product.variants.reduce((sum, v) => sum + v.stock, 0))
+const defaultVariant = computed(() => product.value.variants.find(v => v.isDefault) ?? product.value.variants[0])
+const coverImage = computed(() => product.value.images[0]?.url ?? '/images/placeholder-fish.svg')
+const hoverImage = computed(() => product.value.images[1]?.url ?? null)
+const totalStock = computed(() => product.value.variants.reduce((sum, v) => sum + v.stock, 0))
 const discountPercent = computed(() => {
-  const price = Number(product.price)
-  const compareAt = product.compareAtPrice ? Number(product.compareAtPrice) : null
+  const price = Number(product.value.price)
+  const compareAt = product.value.compareAtPrice ? Number(product.value.compareAtPrice) : null
   if (!compareAt || compareAt <= price) return null
   return Math.round((1 - price / compareAt) * 100)
 })
@@ -83,6 +95,16 @@ const discountPercent = computed(() => {
           :style="isWishlisted ? { fill: 'currentColor' } : undefined"
         />
       </button>
+      <button
+        v-if="isAdmin"
+        type="button"
+        class="absolute bottom-2 left-2 flex size-8 items-center justify-center rounded-full bg-default/90 shadow transition hover:scale-110"
+        aria-label="Chỉnh sửa sản phẩm"
+        title="Chỉnh sửa sản phẩm"
+        @click.stop.prevent="editOpen = true"
+      >
+        <UIcon name="i-lucide-pencil" class="size-4 text-primary" />
+      </button>
     </div>
 
     <div class="flex flex-1 flex-col gap-1 p-3">
@@ -119,4 +141,10 @@ const discountPercent = computed(() => {
   </NuxtLink>
 
   <StorefrontProductQuickBuyModal v-model:open="quickBuyOpen" :product="product" />
+  <StorefrontProductEditDialog
+    v-if="isAdmin"
+    v-model:open="editOpen"
+    :product="product"
+    @updated="onProductUpdated"
+  />
 </template>

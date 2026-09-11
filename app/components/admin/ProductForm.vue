@@ -8,7 +8,7 @@ const props = defineProps<{
   loading?: boolean
 }>()
 
-const emit = defineEmits<{ submit: [payload: Record<string, unknown>] }>()
+const emit = defineEmits<{ submit: [payload: Record<string, unknown>], cancel: [] }>()
 
 interface VariantRow {
   id?: string
@@ -76,23 +76,48 @@ const images = ref<ImageRow[]>(
 const uploading = ref(false)
 const toast = useToast()
 
-async function onFileSelected(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
+async function uploadFiles(files: File[]) {
+  const imageFiles = files.filter(f => f.type.startsWith('image/'))
+  if (!imageFiles.length) return
   uploading.value = true
   try {
-    const body = new FormData()
-    body.append('file', file)
-    const res = await $fetch<{ url: string }>('/api/admin/uploads', { method: 'POST', body })
-    images.value.push({ url: res.url, alt: form.name })
+    for (const file of imageFiles) {
+      const body = new FormData()
+      body.append('file', file)
+      const res = await $fetch<{ url: string }>('/api/admin/uploads', { method: 'POST', body })
+      images.value.push({ url: res.url, alt: form.name })
+    }
   } catch (err) {
     const message = (err as { data?: { message?: string } })?.data?.message ?? 'Tải ảnh thất bại'
     toast.add({ title: 'Lỗi', description: message, color: 'error' })
   } finally {
     uploading.value = false
-    input.value = ''
   }
+}
+
+async function onFileSelected(e: Event) {
+  const input = e.target as HTMLInputElement
+  const files = input.files ? Array.from(input.files) : []
+  await uploadFiles(files)
+  input.value = ''
+}
+
+const dragCounter = ref(0)
+const isDraggingOver = computed(() => dragCounter.value > 0)
+
+function onDragEnter(e: DragEvent) {
+  if (!e.dataTransfer?.types.includes('Files')) return
+  dragCounter.value++
+}
+
+function onDragLeave() {
+  dragCounter.value = Math.max(0, dragCounter.value - 1)
+}
+
+function onDrop(e: DragEvent) {
+  dragCounter.value = 0
+  const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : []
+  uploadFiles(files)
 }
 
 function removeImage(index: number) {
@@ -208,23 +233,32 @@ function submit() {
             >
               Tải ảnh lên
             </UButton>
-            <input type="file" accept="image/*" class="hidden" @change="onFileSelected">
+            <input type="file" accept="image/*" multiple class="hidden" @change="onFileSelected">
           </label>
         </div>
       </template>
-      <div v-if="!images.length" class="py-6 text-center text-sm text-muted">
-        Chưa có ảnh nào
-      </div>
-      <div v-else class="grid grid-cols-3 gap-3 sm:grid-cols-5">
-        <div v-for="(image, idx) in images" :key="idx" class="group relative aspect-square overflow-hidden rounded-lg border border-default">
-          <img :src="image.url" :alt="image.alt" class="size-full object-cover">
-          <button
-            type="button"
-            class="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100"
-            @click="removeImage(idx)"
-          >
-            <UIcon name="i-lucide-x" class="size-3" />
-          </button>
+      <div
+        class="rounded-lg border-2 border-dashed p-4 transition-colors"
+        :class="isDraggingOver ? 'border-primary bg-primary/5' : 'border-transparent'"
+        @dragenter.prevent="onDragEnter"
+        @dragover.prevent
+        @dragleave.prevent="onDragLeave"
+        @drop.prevent="onDrop"
+      >
+        <div v-if="!images.length" class="py-6 text-center text-sm text-muted">
+          Kéo thả ảnh vào đây, hoặc bấm "Tải ảnh lên"
+        </div>
+        <div v-else class="grid grid-cols-3 gap-3 sm:grid-cols-5">
+          <div v-for="(image, idx) in images" :key="idx" class="group relative aspect-square overflow-hidden rounded-lg border border-default">
+            <img :src="image.url" :alt="image.alt" class="size-full object-cover">
+            <button
+              type="button"
+              class="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100"
+              @click="removeImage(idx)"
+            >
+              <UIcon name="i-lucide-x" class="size-3" />
+            </button>
+          </div>
         </div>
       </div>
     </UCard>
@@ -282,10 +316,10 @@ function submit() {
     </UCard>
 
     <div class="flex justify-end gap-3">
-      <UButton to="/admin/products" color="neutral" variant="outline">
+      <UButton color="neutral" variant="outline" :disabled="loading" @click="emit('cancel')">
         Huỷ
       </UButton>
-      <UButton :loading="loading" @click="submit">
+      <UButton :loading="loading" :disabled="loading" @click="submit">
         Lưu sản phẩm
       </UButton>
     </div>

@@ -4,6 +4,7 @@ import type { Category, Product, Tag } from '#shared/types/catalog'
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 const route = useRoute()
+const router = useRouter()
 const id = route.params.id as string
 
 const [{ data: categories }, { data: tags }, { data: product }] = await Promise.all([
@@ -40,6 +41,13 @@ useSeoMeta({ title: () => `Sửa: ${product.value?.name} - Cá nhà biển Admin
     <h1 class="text-xl font-bold text-highlighted">
       Sửa sản phẩm
     </h1>
-    <AdminProductForm :categories="categories ?? []" :tags="tags ?? []" :initial="product" :loading="loading" @submit="onSubmit" />
+    <AdminProductForm
+      :categories="categories ?? []"
+      :tags="tags ?? []"
+      :initial="product"
+      :loading="loading"
+      @submit="onSubmit"
+      @cancel="router.push('/admin/products')"
+    />
   </div>
 </template>

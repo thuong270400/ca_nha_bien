@@ -32,6 +32,12 @@ useSeoMeta({ title: 'Thêm sản phẩm - Cá nhà biển Admin' })
     <h1 class="text-xl font-bold text-highlighted">
       Thêm sản phẩm
     </h1>
-    <AdminProductForm :categories="categories ?? []" :tags="tags ?? []" :loading="loading" @submit="onSubmit" />
+    <AdminProductForm
+      :categories="categories ?? []"
+      :tags="tags ?? []"
+      :loading="loading"
+      @submit="onSubmit"
+      @cancel="router.push('/admin/products')"
+    />
   </div>
 </template>
