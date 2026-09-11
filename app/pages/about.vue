@@ -34,16 +34,13 @@ useCanonical('/about')
           <li class="flex items-center gap-2">
             <UIcon name="i-lucide-snowflake" class="size-4 text-primary" /> Bảo quản lạnh đạt chuẩn suốt quá trình vận chuyển
           </li>
-          <li class="flex items-center gap-2">
-            <UIcon name="i-lucide-undo-2" class="size-4 text-primary" /> Đổi trả nếu sản phẩm không tươi
-          </li>
         </ul>
 
         <h2 class="pt-4 font-semibold text-highlighted">
           Khu vực giao hàng
         </h2>
         <p>
-          Nội thành TP.HCM: giao trong 2 giờ. Các tỉnh thành khác: 1-3 ngày qua đối tác vận chuyển.
+          Giao hàng tận nơi tại TP.HCM và các tỉnh thành lân cận qua đối tác vận chuyển.
         </p>
       </div>
 

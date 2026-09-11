@@ -44,9 +44,6 @@ const { contact } = useAppConfig()
               <li class="flex items-center gap-2">
                 <UIcon name="i-lucide-snowflake" class="size-4 text-primary" /> Bảo quản lạnh đạt chuẩn
               </li>
-              <li class="flex items-center gap-2">
-                <UIcon name="i-lucide-undo-2" class="size-4 text-primary" /> Đổi trả nếu không tươi
-              </li>
             </ul>
           </div>
 
@@ -55,8 +52,7 @@ const { contact } = useAppConfig()
               Khu vực giao hàng
             </h3>
             <p class="text-sm text-muted">
-              Nội thành TP.HCM: giao trong 2 giờ.<br>
-              Các tỉnh thành khác: 1-3 ngày qua đối tác vận chuyển.
+              Giao hàng tận nơi tại TP.HCM và các tỉnh thành lân cận qua đối tác vận chuyển.
             </p>
           </div>
 

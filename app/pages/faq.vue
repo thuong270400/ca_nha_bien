@@ -10,7 +10,7 @@ const items = [
   },
   {
     label: 'Phí giao hàng được tính như thế nào?',
-    content: 'Nội thành TP.HCM giao trong 2 giờ, các tỉnh thành khác 1-3 ngày. Đơn hàng từ 500.000đ được miễn phí giao hàng, dưới mức này áp dụng phí theo khu vực.',
+    content: 'Đơn hàng từ 500.000đ được miễn phí giao hàng, dưới mức này áp dụng phí theo khu vực. Thời gian giao hàng cụ thể sẽ được xác nhận khi đặt hàng.',
   },
   {
     label: 'Tôi có thể thanh toán bằng hình thức nào?',

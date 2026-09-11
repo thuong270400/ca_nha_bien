@@ -18,8 +18,7 @@ useCanonical('/policy')
           Chính sách giao hàng
         </h2>
         <div class="space-y-2 text-sm text-muted">
-          <p>Nội thành TP.HCM: giao trong vòng 2 giờ kể từ khi đơn hàng được xác nhận.</p>
-          <p>Các tỉnh thành khác: 1-3 ngày làm việc qua đối tác vận chuyển.</p>
+          <p>Giao hàng tận nơi tại TP.HCM và các tỉnh thành lân cận qua đối tác vận chuyển; thời gian giao hàng cụ thể sẽ được xác nhận khi đặt hàng.</p>
           <p>
             Đơn hàng dưới 500.000đ chịu phí giao hàng theo khu vực; đơn hàng từ 500.000đ trở lên được
             miễn phí giao hàng.

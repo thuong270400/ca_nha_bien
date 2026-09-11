@@ -67,7 +67,7 @@ useCanonical('/')
             Cá tươi mỗi ngày,<br>giao tận nhà
           </h1>
           <p class="mt-4 max-w-md text-muted">
-            Cá nhà biển chọn lọc cá và hải sản tươi sống từ ngư dân, sơ chế sạch, giao nhanh trong 2 giờ tại TP.HCM.
+            Cá nhà biển chọn lọc cá và hải sản tươi sống từ ngư dân, sơ chế sạch trước khi giao đến tận nhà bạn.
           </p>
           <div class="mt-6 flex gap-3">
             <UButton to="/products" size="lg" trailing-icon="i-lucide-arrow-right">
@@ -134,34 +134,14 @@ useCanonical('/')
 
     <section class="bg-elevated py-12">
       <UContainer>
-        <div class="grid grid-cols-1 gap-8 sm:grid-cols-3">
-          <div class="text-center">
-            <UIcon name="i-lucide-badge-check" class="mx-auto size-10 text-primary" />
-            <h3 class="mt-3 font-semibold text-highlighted">
-              Cam kết tươi 100%
-            </h3>
-            <p class="mt-1 text-sm text-muted">
-              Đánh bắt và giao trong ngày, không qua đông lạnh lâu ngày.
-            </p>
-          </div>
-          <div class="text-center">
-            <UIcon name="i-lucide-truck" class="mx-auto size-10 text-primary" />
-            <h3 class="mt-3 font-semibold text-highlighted">
-              Giao nhanh 2 giờ
-            </h3>
-            <p class="mt-1 text-sm text-muted">
-              Nội thành TP.HCM. Các tỉnh khác giao trong 1-3 ngày.
-            </p>
-          </div>
-          <div class="text-center">
-            <UIcon name="i-lucide-undo-2" class="mx-auto size-10 text-primary" />
-            <h3 class="mt-3 font-semibold text-highlighted">
-              Đổi trả dễ dàng
-            </h3>
-            <p class="mt-1 text-sm text-muted">
-              Hoàn tiền 100% nếu sản phẩm không tươi ngon như cam kết.
-            </p>
-          </div>
+        <div class="mx-auto max-w-xs text-center">
+          <UIcon name="i-lucide-badge-check" class="mx-auto size-10 text-primary" />
+          <h3 class="mt-3 font-semibold text-highlighted">
+            Cam kết tươi 100%
+          </h3>
+          <p class="mt-1 text-sm text-muted">
+            Đánh bắt và giao trong ngày, không qua đông lạnh lâu ngày.
+          </p>
         </div>
       </UContainer>
     </section>
