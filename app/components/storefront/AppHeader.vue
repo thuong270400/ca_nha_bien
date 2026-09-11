@@ -107,7 +107,9 @@ async function logout() {
           { label: 'Đăng xuất', icon: 'i-lucide-log-out', onSelect: logout },
         ]]"
       >
-        <UButton color="neutral" variant="ghost" icon="i-lucide-user-round" :label="user?.name" />
+        <UButton color="neutral" variant="ghost" icon="i-lucide-user-round" aria-label="Tài khoản">
+          <span class="hidden sm:inline">{{ user?.name }}</span>
+        </UButton>
       </UDropdownMenu>
       <UButton
         v-else
