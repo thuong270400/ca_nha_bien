@@ -113,7 +113,7 @@ async function remove(banner: Banner) {
   }
 }
 
-useSeoMeta({ title: 'Banner - Cá nhà biển Admin' })
+useSeoMeta({ title: 'Banner - Cá Nhà Biển Admin' })
 </script>
 
 <template>

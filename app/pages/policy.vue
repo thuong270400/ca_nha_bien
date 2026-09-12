@@ -1,7 +1,7 @@
 <script setup lang="ts">
 useSeoMeta({
-  title: 'Chính sách - Cá nhà biển',
-  description: 'Chính sách giao hàng và đổi trả của Cá nhà biển.',
+  title: 'Chính sách - Cá Nhà Biển',
+  description: 'Chính sách giao hàng và đổi trả của Cá Nhà Biển.',
 })
 useCanonical('/policy')
 </script>
@@ -33,14 +33,14 @@ useCanonical('/policy')
         </h2>
         <div class="space-y-2 text-sm text-muted">
           <p>
-            Vì là mặt hàng tươi sống, Cá nhà biển chỉ nhận đổi trả nếu sản phẩm không đảm bảo độ tươi hoặc giao
+            Vì là mặt hàng tươi sống, Cá Nhà Biển chỉ nhận đổi trả nếu sản phẩm không đảm bảo độ tươi hoặc giao
             sai/thiếu so với đơn hàng.
           </p>
           <p>
             Khách hàng vui lòng kiểm tra hàng ngay khi nhận và phản ánh trong vòng 2 giờ kể từ lúc nhận hàng
             qua hotline hoặc email hỗ trợ.
           </p>
-          <p>Cá nhà biển sẽ đổi sản phẩm mới hoặc hoàn tiền tương ứng sau khi xác minh.</p>
+          <p>Cá Nhà Biển sẽ đổi sản phẩm mới hoặc hoàn tiền tương ứng sau khi xác minh.</p>
         </div>
       </section>
     </div>

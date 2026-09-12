@@ -84,7 +84,7 @@ async function hardDeleteProduct(id: string, name: string) {
   }
 }
 
-useSeoMeta({ title: 'Sản phẩm - Cá nhà biển Admin' })
+useSeoMeta({ title: 'Sản phẩm - Cá Nhà Biển Admin' })
 </script>
 
 <template>

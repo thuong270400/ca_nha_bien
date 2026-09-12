@@ -68,7 +68,7 @@ async function remove(tag: Tag) {
   }
 }
 
-useSeoMeta({ title: 'Tag - Cá nhà biển Admin' })
+useSeoMeta({ title: 'Tag - Cá Nhà Biển Admin' })
 </script>
 
 <template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 useSeoMeta({
-  title: 'Giới thiệu - Cá nhà biển',
-  description: 'Cá nhà biển - cá tươi, hải sản tươi sống đánh bắt trong ngày, giao tận nhà mỗi sáng.',
+  title: 'Giới thiệu - Cá Nhà Biển',
+  description: 'Cá Nhà Biển - cá tươi, hải sản tươi sống đánh bắt trong ngày, giao tận nhà mỗi sáng.',
 })
 useCanonical('/about')
 </script>
@@ -10,12 +10,12 @@ useCanonical('/about')
   <UContainer class="py-12">
     <div class="mx-auto max-w-2xl">
       <h1 class="mb-6 text-2xl font-bold text-highlighted">
-        Giới thiệu về Cá nhà biển
+        Giới thiệu về Cá Nhà Biển
       </h1>
 
       <div class="space-y-4 text-sm text-muted">
         <p>
-          Cá nhà biển ra đời với mong muốn mang cá và hải sản tươi ngon nhất, đánh bắt trong ngày, đến thẳng bữa cơm
+          Cá Nhà Biển ra đời với mong muốn mang cá và hải sản tươi ngon nhất, đánh bắt trong ngày, đến thẳng bữa cơm
           của mỗi gia đình Việt — không qua trung gian, không mất đi độ tươi.
         </p>
         <p>

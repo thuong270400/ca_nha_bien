@@ -80,7 +80,7 @@ async function remove(category: Category) {
   }
 }
 
-useSeoMeta({ title: 'Danh mục - Cá nhà biển Admin' })
+useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
 </script>
 
 <template>

@@ -85,7 +85,7 @@ const statusChartData = computed(() => ({
 
 const chartOptions = { responsive: true, maintainAspectRatio: false }
 
-useSeoMeta({ title: 'Báo cáo - Cá nhà biển Admin' })
+useSeoMeta({ title: 'Báo cáo - Cá Nhà Biển Admin' })
 </script>
 
 <template>

@@ -34,7 +34,7 @@ async function save() {
   }
 }
 
-useSeoMeta({ title: 'Tài khoản của tôi - Cá nhà biển' })
+useSeoMeta({ title: 'Tài khoản của tôi - Cá Nhà Biển' })
 </script>
 
 <template>

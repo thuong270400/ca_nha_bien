@@ -17,7 +17,7 @@ async function submit() {
       method: 'POST',
       body: { ...form, phone: form.phone || undefined },
     })
-    toast.add({ title: 'Đã gửi liên hệ', description: 'Cá nhà biển sẽ phản hồi bạn sớm nhất.', color: 'success' })
+    toast.add({ title: 'Đã gửi liên hệ', description: 'Cá Nhà Biển sẽ phản hồi bạn sớm nhất.', color: 'success' })
     form.name = ''
     form.email = ''
     form.phone = ''
@@ -31,8 +31,8 @@ async function submit() {
 }
 
 useSeoMeta({
-  title: 'Liên hệ - Cá nhà biển',
-  description: 'Thông tin liên hệ Cá nhà biển - hotline, email, địa chỉ.',
+  title: 'Liên hệ - Cá Nhà Biển',
+  description: 'Thông tin liên hệ Cá Nhà Biển - hotline, email, địa chỉ.',
 })
 useCanonical('/contact')
 </script>
@@ -44,7 +44,7 @@ useCanonical('/contact')
         Liên hệ với chúng tôi
       </h1>
       <p class="mb-6 text-sm text-muted">
-        Có câu hỏi về sản phẩm, đơn hàng hoặc muốn hợp tác? Cá nhà biển luôn sẵn sàng hỗ trợ bạn.
+        Có câu hỏi về sản phẩm, đơn hàng hoặc muốn hợp tác? Cá Nhà Biển luôn sẵn sàng hỗ trợ bạn.
       </p>
 
       <div class="space-y-4 rounded-xl border border-default p-5">

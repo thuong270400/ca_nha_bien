@@ -30,7 +30,7 @@ async function removeItem(itemId: string) {
 const hasUnavailableItems = computed(() => cartStore.cart?.items.some(i => !i.available) ?? false)
 const canCheckout = computed(() => (cartStore.cart?.items.length ?? 0) > 0 && !hasUnavailableItems.value)
 
-useSeoMeta({ title: 'Giỏ hàng - Cá nhà biển' })
+useSeoMeta({ title: 'Giỏ hàng - Cá Nhà Biển' })
 </script>
 
 <template>

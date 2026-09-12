@@ -136,15 +136,6 @@ export async function getBestSellingProducts(limit = 8) {
   })
 }
 
-export async function getNewArrivalProducts(limit = 8) {
-  return prisma.product.findMany({
-    where: activeProductWhere,
-    include: productInclude,
-    take: limit,
-    orderBy: { createdAt: 'desc' },
-  })
-}
-
 export async function getOnSaleProducts(limit = 8) {
   return prisma.product.findMany({
     where: { ...activeProductWhere, compareAtPrice: { not: null } },

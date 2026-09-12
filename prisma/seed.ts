@@ -115,7 +115,7 @@ async function main() {
   console.log('Seeding admin account...')
   await prisma.user.create({
     data: {
-      name: 'Quản trị viên Cá nhà biển',
+      name: 'Quản trị viên Cá Nhà Biển',
       email: 'admin@fiship.vn',
       phone: '0900000000',
       role: 'ADMIN',

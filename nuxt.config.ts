@@ -30,7 +30,7 @@ export default defineNuxtConfig({
 
   site: {
     url: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-    name: 'Cá nhà biển - Cá tươi mỗi ngày',
+    name: 'Cá Nhà Biển - Cá tươi mỗi ngày',
   },
 
   sitemap: {

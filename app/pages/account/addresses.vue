@@ -98,7 +98,7 @@ async function setDefault(address: AddressView) {
   }
 }
 
-useSeoMeta({ title: 'Sổ địa chỉ - Cá nhà biển' })
+useSeoMeta({ title: 'Sổ địa chỉ - Cá Nhà Biển' })
 </script>
 
 <template>

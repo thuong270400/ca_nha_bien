@@ -9,7 +9,7 @@ const { data } = await useFetch<PaginatedResult<OrderView>>('/api/orders', {
   query: { limit: 50 },
 })
 
-useSeoMeta({ title: 'Đơn hàng của tôi - Cá nhà biển' })
+useSeoMeta({ title: 'Đơn hàng của tôi - Cá Nhà Biển' })
 </script>
 
 <template>

@@ -4,7 +4,6 @@ import type { Banner } from '#shared/types/content'
 
 interface HomeData {
   bestSelling: Product[]
-  newArrivals: Product[]
   onSale: Product[]
   categories: Category[]
   banners: Banner[]
@@ -13,9 +12,9 @@ interface HomeData {
 const { data } = await useFetch<HomeData>('/api/home', { key: 'home-data' })
 
 useSeoMeta({
-  title: 'Cá nhà biển - Cá tươi mỗi ngày',
+  title: 'Cá Nhà Biển - Cá tươi mỗi ngày',
   description: 'Cá tươi, hải sản tươi sống đánh bắt trong ngày, giao tận nhà. Đặt hàng online, thanh toán khi nhận hàng.',
-  ogTitle: 'Cá nhà biển - Cá tươi mỗi ngày',
+  ogTitle: 'Cá Nhà Biển - Cá tươi mỗi ngày',
   ogDescription: 'Cá tươi, hải sản tươi sống đánh bắt trong ngày, giao tận nhà.',
 })
 useCanonical('/')
@@ -49,7 +48,7 @@ useCanonical('/')
           <div class="relative">
             <img
               :src="item.imageUrl"
-              :alt="item.title ?? 'Cá nhà biển'"
+              :alt="item.title ?? 'Cá Nhà Biển'"
               class="mx-auto w-full max-w-md rounded-2xl"
             >
           </div>
@@ -67,7 +66,7 @@ useCanonical('/')
             Cá tươi mỗi ngày,<br>giao tận nhà
           </h1>
           <p class="mt-4 max-w-md text-muted">
-            Cá nhà biển chọn lọc cá và hải sản tươi sống từ ngư dân, sơ chế sạch trước khi giao đến tận nhà bạn.
+            Cá Nhà Biển chọn lọc cá và hải sản tươi sống từ ngư dân, sơ chế sạch trước khi giao đến tận nhà bạn.
           </p>
           <div class="mt-6 flex gap-3">
             <UButton to="/products" size="lg" trailing-icon="i-lucide-arrow-right">
@@ -81,7 +80,7 @@ useCanonical('/')
         <div class="relative">
           <img
             src="/images/placeholder-fish.svg"
-            alt="Cá tươi Cá nhà biển"
+            alt="Cá tươi Cá Nhà Biển"
             class="mx-auto w-full max-w-md rounded-2xl"
           >
         </div>
@@ -112,17 +111,10 @@ useCanonical('/')
     </section>
 
     <StorefrontProductSection
-      title="Cá bán chạy"
+      title="Bán chạy"
       description="Được khách hàng lựa chọn nhiều nhất"
       :products="data?.bestSelling ?? []"
       view-all-to="/products?sort=best_selling"
-    />
-
-    <StorefrontProductSection
-      title="Cá mới về"
-      description="Vừa cập bến, tươi ngon nhất"
-      :products="data?.newArrivals ?? []"
-      view-all-to="/products?sort=newest"
     />
 
     <StorefrontProductSection

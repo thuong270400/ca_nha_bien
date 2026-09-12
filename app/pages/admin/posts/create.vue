@@ -19,7 +19,7 @@ async function onSubmit(payload: Record<string, unknown>) {
   }
 }
 
-useSeoMeta({ title: 'Thêm bài viết - Cá nhà biển Admin' })
+useSeoMeta({ title: 'Thêm bài viết - Cá Nhà Biển Admin' })
 </script>
 
 <template>

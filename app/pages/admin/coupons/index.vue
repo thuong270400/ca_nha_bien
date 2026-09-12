@@ -142,7 +142,7 @@ function formatValue(coupon: CouponView) {
   return coupon.type === 'PERCENTAGE' ? `${Number(coupon.value)}%` : formatVnd(coupon.value)
 }
 
-useSeoMeta({ title: 'Mã giảm giá - Cá nhà biển Admin' })
+useSeoMeta({ title: 'Mã giảm giá - Cá Nhà Biển Admin' })
 </script>
 
 <template>

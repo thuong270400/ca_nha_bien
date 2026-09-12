@@ -21,8 +21,8 @@ function setPage(page: number) {
 }
 
 useSeoMeta({
-  title: 'Tư vấn món ngon - Cá nhà biển',
-  description: 'Công thức chế biến, mẹo nấu ăn ngon với cá và hải sản tươi tại Cá nhà biển.',
+  title: 'Tư vấn món ngon - Cá Nhà Biển',
+  description: 'Công thức chế biến, mẹo nấu ăn ngon với cá và hải sản tươi tại Cá Nhà Biển.',
 })
 
 useCanonical('/recipes')

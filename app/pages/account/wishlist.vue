@@ -5,7 +5,7 @@ definePageMeta({ middleware: 'auth' })
 
 const { data: items } = await useFetch<WishlistItemView[]>('/api/wishlist', { key: 'my-wishlist' })
 
-useSeoMeta({ title: 'Sản phẩm yêu thích - Cá nhà biển' })
+useSeoMeta({ title: 'Sản phẩm yêu thích - Cá Nhà Biển' })
 </script>
 
 <template>

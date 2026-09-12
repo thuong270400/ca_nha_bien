@@ -90,8 +90,8 @@ function setPage(page: number) {
 }
 
 useSeoMeta({
-  title: () => `${category.value?.name} - Cá nhà biển`,
-  description: () => category.value?.description || `Danh sách sản phẩm thuộc danh mục ${category.value?.name} tại Cá nhà biển.`,
+  title: () => `${category.value?.name} - Cá Nhà Biển`,
+  description: () => category.value?.description || `Danh sách sản phẩm thuộc danh mục ${category.value?.name} tại Cá Nhà Biển.`,
 })
 
 useCanonical(`/categories/${slug}`)

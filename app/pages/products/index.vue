@@ -100,8 +100,8 @@ function setPage(page: number) {
 const activeCategory = computed(() => categories.value?.find(c => c.slug === route.query.category))
 
 useSeoMeta({
-  title: computed(() => activeCategory.value ? `${activeCategory.value.name} - Cá nhà biển` : 'Tất cả sản phẩm - Cá nhà biển'),
-  description: 'Danh sách cá tươi, hải sản tươi sống tại Cá nhà biển. Lọc theo loại cá, giá, tình trạng còn hàng.',
+  title: computed(() => activeCategory.value ? `${activeCategory.value.name} - Cá Nhà Biển` : 'Tất cả sản phẩm - Cá Nhà Biển'),
+  description: 'Danh sách cá tươi, hải sản tươi sống tại Cá Nhà Biển. Lọc theo loại cá, giá, tình trạng còn hàng.',
 })
 
 useCanonical(activeCategory.value ? `/products?category=${activeCategory.value.slug}` : '/products')

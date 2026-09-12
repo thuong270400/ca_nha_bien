@@ -44,7 +44,7 @@ const paymentMethodLabels: Record<string, string> = {
   ZALOPAY: 'ZaloPay',
 }
 
-useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá nhà biển Admin` })
+useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Biển Admin` })
 </script>
 
 <template>

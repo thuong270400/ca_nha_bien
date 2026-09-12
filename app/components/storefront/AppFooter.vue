@@ -10,8 +10,8 @@ const { contact } = useAppConfig()
         <div class="grid grid-cols-1 gap-8 py-8 sm:grid-cols-2 lg:grid-cols-5">
           <div>
             <div class="flex items-center gap-2 text-lg font-bold text-primary">
-              <img src="/images/logo/logo.png" alt="Cá nhà biển" class="size-8 object-contain">
-              Cá nhà biển
+              <img src="/images/logo/logo.png" alt="Cá Nhà Biển" class="size-8 object-contain">
+              Cá Nhà Biển
             </div>
             <p class="mt-3 text-sm text-muted">
               Cá tươi, hải sản tươi sống đánh bắt trong ngày — giao tận nhà mỗi sáng.
@@ -78,7 +78,7 @@ const { contact } = useAppConfig()
 
     <template #left>
       <p class="text-sm text-muted">
-        © {{ year }} Cá nhà biển. All rights reserved.
+        © {{ year }} Cá Nhà Biển. All rights reserved.
       </p>
     </template>
   </UFooter>

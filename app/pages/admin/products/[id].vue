@@ -33,7 +33,7 @@ async function onSubmit(payload: Record<string, unknown>) {
   }
 }
 
-useSeoMeta({ title: () => `Sửa: ${product.value?.name} - Cá nhà biển Admin` })
+useSeoMeta({ title: () => `Sửa: ${product.value?.name} - Cá Nhà Biển Admin` })
 </script>
 
 <template>

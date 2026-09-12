@@ -13,7 +13,7 @@ if (!orderId) {
   await navigateTo('/')
 }
 
-useSeoMeta({ title: 'Đặt hàng thành công - Cá nhà biển' })
+useSeoMeta({ title: 'Đặt hàng thành công - Cá Nhà Biển' })
 </script>
 
 <template>

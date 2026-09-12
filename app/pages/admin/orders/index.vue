@@ -36,7 +36,7 @@ function setPage(page: number) {
   router.push({ path: '/admin/orders', query: { ...route.query, page } })
 }
 
-useSeoMeta({ title: 'Đơn hàng - Cá nhà biển Admin' })
+useSeoMeta({ title: 'Đơn hàng - Cá Nhà Biển Admin' })
 </script>
 
 <template>

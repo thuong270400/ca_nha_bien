@@ -117,7 +117,7 @@ async function submitOrder() {
   }
 }
 
-useSeoMeta({ title: 'Thanh toán - Cá nhà biển' })
+useSeoMeta({ title: 'Thanh toán - Cá Nhà Biển' })
 </script>
 
 <template>

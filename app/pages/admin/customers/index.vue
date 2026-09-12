@@ -79,7 +79,7 @@ async function confirmPromote() {
   }
 }
 
-useSeoMeta({ title: 'Khách hàng - Cá nhà biển Admin' })
+useSeoMeta({ title: 'Khách hàng - Cá Nhà Biển Admin' })
 </script>
 
 <template>

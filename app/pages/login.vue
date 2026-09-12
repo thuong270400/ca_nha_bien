@@ -29,7 +29,7 @@ async function onSubmit(payload: { data: LoginInput }) {
   }
 }
 
-useSeoMeta({ title: 'Đăng nhập - Cá nhà biển' })
+useSeoMeta({ title: 'Đăng nhập - Cá Nhà Biển' })
 </script>
 
 <template>

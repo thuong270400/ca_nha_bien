@@ -55,7 +55,7 @@ async function deleteReview(review: AdminReviewView) {
   }
 }
 
-useSeoMeta({ title: 'Đánh giá - Cá nhà biển Admin' })
+useSeoMeta({ title: 'Đánh giá - Cá Nhà Biển Admin' })
 </script>
 
 <template>

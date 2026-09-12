@@ -17,7 +17,7 @@ const formattedDate = computed(() =>
 )
 
 useSeoMeta({
-  title: () => `${post.value?.title} - Cá nhà biển`,
+  title: () => `${post.value?.title} - Cá Nhà Biển`,
   description: () => post.value?.excerpt || undefined,
   ogTitle: () => post.value?.title,
   ogImage: () => post.value?.coverImageUrl ?? undefined,

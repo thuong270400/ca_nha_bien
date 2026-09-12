@@ -21,8 +21,8 @@ function setPage(page: number) {
 }
 
 useSeoMeta({
-  title: 'Tin tức - Cá nhà biển',
-  description: 'Tin tức, kiến thức về cá và hải sản tươi sống tại Cá nhà biển.',
+  title: 'Tin tức - Cá Nhà Biển',
+  description: 'Tin tức, kiến thức về cá và hải sản tươi sống tại Cá Nhà Biển.',
 })
 
 useCanonical('/blog')

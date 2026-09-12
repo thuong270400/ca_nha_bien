@@ -28,8 +28,8 @@ async function logout() {
     <UDashboardSidebar>
       <template #header>
         <NuxtLink to="/admin" class="flex items-center gap-2 font-bold text-highlighted">
-          <img src="/images/logo/logo.png" alt="Cá nhà biển" class="size-8 object-contain">
-          Cá nhà biển Admin
+          <img src="/images/logo/logo.png" alt="Cá Nhà Biển" class="size-8 object-contain">
+          Cá Nhà Biển Admin
         </NuxtLink>
       </template>
 

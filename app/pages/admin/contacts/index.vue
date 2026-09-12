@@ -62,7 +62,7 @@ async function remove(message: ContactMessage) {
   }
 }
 
-useSeoMeta({ title: 'Liên hệ - Cá nhà biển Admin' })
+useSeoMeta({ title: 'Liên hệ - Cá Nhà Biển Admin' })
 </script>
 
 <template>

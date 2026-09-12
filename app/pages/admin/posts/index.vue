@@ -48,7 +48,7 @@ async function deletePost(id: string) {
   }
 }
 
-useSeoMeta({ title: 'Bài viết - Cá nhà biển Admin' })
+useSeoMeta({ title: 'Bài viết - Cá Nhà Biển Admin' })
 </script>
 
 <template>

@@ -81,8 +81,8 @@ async function addToCart() {
 }
 
 useSeoMeta({
-  title: () => `${product.value?.name} - Cá nhà biển`,
-  description: () => product.value?.description || `Mua ${product.value?.name} tươi ngon tại Cá nhà biển`,
+  title: () => `${product.value?.name} - Cá Nhà Biển`,
+  description: () => product.value?.description || `Mua ${product.value?.name} tươi ngon tại Cá Nhà Biển`,
   ogTitle: () => product.value?.name,
   ogDescription: () => product.value?.description || undefined,
   ogImage: () => product.value?.images[0]?.url,

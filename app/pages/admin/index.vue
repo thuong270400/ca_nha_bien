@@ -15,7 +15,7 @@ interface DashboardStats {
 
 const { data } = await useFetch<DashboardStats>('/api/admin/dashboard', { key: 'admin-dashboard' })
 
-useSeoMeta({ title: 'Tổng quan - Cá nhà biển Admin' })
+useSeoMeta({ title: 'Tổng quan - Cá Nhà Biển Admin' })
 </script>
 
 <template>

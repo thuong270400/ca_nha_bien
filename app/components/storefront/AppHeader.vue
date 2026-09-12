@@ -44,8 +44,8 @@ async function logout() {
   <UHeader>
     <template #title>
       <NuxtLink to="/" class="flex items-center gap-2 text-lg font-bold text-primary">
-        <img src="/images/logo/logo.png" alt="Cá nhà biển" class="size-8 object-contain">
-        Cá nhà biển
+        <img src="/images/logo/logo.png" alt="Cá Nhà Biển" class="size-8 object-contain">
+        Cá Nhà Biển
       </NuxtLink>
     </template>
 

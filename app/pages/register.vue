@@ -29,7 +29,7 @@ async function onSubmit(payload: { data: RegisterInput }) {
   }
 }
 
-useSeoMeta({ title: 'Đăng ký - Cá nhà biển' })
+useSeoMeta({ title: 'Đăng ký - Cá Nhà Biển' })
 </script>
 
 <template>
