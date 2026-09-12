@@ -10,8 +10,15 @@ const open = ref(false)
 const saving = ref(false)
 const editing = ref<Category | null>(null)
 
-const form = reactive({ name: '', slug: '', description: '', imageUrl: '', isActive: true })
+const form = reactive({ name: '', slug: '', description: '', imageUrl: '', isActive: true, isFeatured: false })
 const slugTouched = ref(false)
+
+const MAX_FEATURED = 3
+const totalFeaturedCount = computed(() => (categories.value ?? []).filter(c => c.isFeatured).length)
+const featuredCountExcludingEditing = computed(() =>
+  (categories.value ?? []).filter(c => c.isFeatured && c.id !== editing.value?.id).length,
+)
+const featuredLimitReached = computed(() => !form.isFeatured && featuredCountExcludingEditing.value >= MAX_FEATURED)
 
 watch(() => form.name, (name) => {
   if (!slugTouched.value) form.slug = slugify(name)
@@ -24,6 +31,7 @@ function openCreate() {
   form.description = ''
   form.imageUrl = ''
   form.isActive = true
+  form.isFeatured = false
   slugTouched.value = false
   open.value = true
 }
@@ -35,6 +43,7 @@ function openEdit(category: Category) {
   form.description = category.description ?? ''
   form.imageUrl = category.imageUrl ?? ''
   form.isActive = category.isActive
+  form.isFeatured = category.isFeatured
   slugTouched.value = true
   open.value = true
 }
@@ -48,6 +57,7 @@ async function save() {
       description: form.description || undefined,
       imageUrl: form.imageUrl || undefined,
       isActive: form.isActive,
+      isFeatured: form.isFeatured,
     }
     if (editing.value) {
       await $fetch(`/api/categories/${editing.value.id}`, { method: 'PATCH', body: payload })
@@ -86,9 +96,14 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
 <template>
   <div class="space-y-4 p-4 sm:p-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h1 class="text-xl font-bold text-highlighted">
-        Danh mục
-      </h1>
+      <div>
+        <h1 class="text-xl font-bold text-highlighted">
+          Danh mục
+        </h1>
+        <p class="mt-1 text-sm text-muted">
+          Đã chọn {{ totalFeaturedCount }}/{{ MAX_FEATURED }} danh mục hiển thị trên trang chủ
+        </p>
+      </div>
       <UButton icon="i-lucide-plus" @click="openCreate">
         Thêm danh mục
       </UButton>
@@ -107,6 +122,9 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
             <th class="px-4 py-3">
               Trạng thái
             </th>
+            <th class="px-4 py-3">
+              Trang chủ
+            </th>
             <th class="px-4 py-3" />
           </tr>
         </thead>
@@ -121,6 +139,11 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
             <td class="px-4 py-3">
               <UBadge :color="category.isActive ? 'success' : 'neutral'">
                 {{ category.isActive ? 'Hiển thị' : 'Ẩn' }}
+              </UBadge>
+            </td>
+            <td class="px-4 py-3">
+              <UBadge v-if="category.isFeatured" color="primary">
+                Đang hiển thị
               </UBadge>
             </td>
             <td class="px-4 py-3 text-right">
@@ -138,7 +161,7 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
             </td>
           </tr>
           <tr v-if="!categories?.length">
-            <td colspan="4" class="px-4 py-10 text-center text-muted">
+            <td colspan="5" class="px-4 py-10 text-center text-muted">
               Chưa có danh mục nào
             </td>
           </tr>
@@ -162,6 +185,14 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
             <UInput v-model="form.imageUrl" placeholder="/images/..." class="w-full" />
           </UFormField>
           <UCheckbox v-model="form.isActive" label="Hiển thị trên cửa hàng" />
+          <UCheckbox
+            v-model="form.isFeatured"
+            :disabled="featuredLimitReached"
+            label="Hiển thị trên trang chủ"
+            :description="featuredLimitReached
+              ? `Đã đạt tối đa ${MAX_FEATURED} danh mục — bỏ chọn danh mục khác trước`
+              : `Tối đa ${MAX_FEATURED} danh mục hiển thị trên trang chủ`"
+          />
         </div>
       </template>
       <template #footer>

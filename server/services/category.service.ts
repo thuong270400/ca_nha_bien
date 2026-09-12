@@ -9,6 +9,14 @@ export async function listCategories(activeOnly?: boolean) {
   })
 }
 
+export async function getFeaturedCategories(limit = 3) {
+  return prisma.category.findMany({
+    where: { isActive: true, isFeatured: true },
+    orderBy: [{ position: 'asc' }, { name: 'asc' }],
+    take: limit,
+  })
+}
+
 export async function getCategoryById(id: string) {
   const category = await prisma.category.findUnique({ where: { id } })
   if (!category) throw Errors.notFound('Không tìm thấy danh mục')

@@ -104,7 +104,7 @@ useCanonical('/')
         </div>
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <NuxtLink
-            v-for="category in (data?.categories ?? []).slice(0, 3)"
+            v-for="category in data?.categories ?? []"
             :key="category.id"
             :to="`/products?category=${category.slug}`"
             class="flex flex-col items-center gap-2 rounded-xl border border-default p-4 text-center transition hover:shadow-md"

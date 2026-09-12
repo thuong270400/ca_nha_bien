@@ -7,6 +7,7 @@ export const categoryCreateSchema = z.object({
   description: z.string().trim().max(2000).optional(),
   imageUrl: z.string().trim().max(1000).optional(),
   isActive: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
   position: z.number().int().optional(),
 })
 

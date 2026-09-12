@@ -23,9 +23,9 @@ async function resetDatabase() {
 }
 
 const categorySeeds = [
-  { name: 'Cá nguyên con cấp đông', slug: 'ca-nguyen-con-cap-dong', description: 'Cá biển nguyên con, cấp đông ngay sau đánh bắt để giữ trọn độ tươi.', imageUrl: '/images/seed/ca-nguyen-con-cap-dong.svg', position: 1 },
-  { name: 'Cá phi lê cấp đông', slug: 'ca-phi-le', description: 'Cá biển đã lóc xương, phi lê sẵn, cấp đông tiện chế biến.', imageUrl: '/images/seed/ca-phi-le.svg', position: 2 },
-  { name: 'Cá cắt khúc/cắt lát cấp đông', slug: 'ca-cat-khuc-cap-dong', description: 'Cá biển cắt khúc hoặc cắt lát sẵn, cấp đông tiện nấu ăn.', imageUrl: '/images/seed/ca-cat-khuc-cap-dong.svg', position: 3 },
+  { name: 'Cá nguyên con cấp đông', slug: 'ca-nguyen-con-cap-dong', description: 'Cá biển nguyên con, cấp đông ngay sau đánh bắt để giữ trọn độ tươi.', imageUrl: '/images/seed/ca-nguyen-con-cap-dong.svg', position: 1, isFeatured: true },
+  { name: 'Cá phi lê cấp đông', slug: 'ca-phi-le', description: 'Cá biển đã lóc xương, phi lê sẵn, cấp đông tiện chế biến.', imageUrl: '/images/seed/ca-phi-le.svg', position: 2, isFeatured: true },
+  { name: 'Cá cắt khúc/cắt lát cấp đông', slug: 'ca-cat-khuc-cap-dong', description: 'Cá biển cắt khúc hoặc cắt lát sẵn, cấp đông tiện nấu ăn.', imageUrl: '/images/seed/ca-cat-khuc-cap-dong.svg', position: 3, isFeatured: true },
   { name: 'Cá đặc sản cấp đông', slug: 'ca-dac-san', description: 'Cá biển cao cấp cấp đông, số lượng có hạn: cá mú, cá hồng...', imageUrl: '/images/seed/ca-dac-san.svg', position: 4 },
   { name: 'Combo/Ưu đãi', slug: 'combo-uu-dai', description: 'Combo cá biển cấp đông tiết kiệm, ưu đãi theo tuần.', imageUrl: '/images/seed/combo-uu-dai.svg', position: 5 },
 ] as const

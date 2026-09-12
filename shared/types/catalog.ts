@@ -5,6 +5,7 @@ export interface Category {
   description: string | null
   imageUrl: string | null
   isActive: boolean
+  isFeatured: boolean
   position: number
 }
 
