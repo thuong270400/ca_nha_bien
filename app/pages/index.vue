@@ -89,12 +89,22 @@ useCanonical('/')
 
     <section class="py-8">
       <UContainer>
-        <h2 class="mb-4 text-xl font-bold text-highlighted">
-          Danh mục
-        </h2>
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="text-xl font-bold text-highlighted">
+            Danh mục
+          </h2>
+          <UButton
+            to="/products"
+            color="neutral"
+            variant="link"
+            trailing-icon="i-lucide-arrow-right"
+          >
+            Xem tất cả danh mục
+          </UButton>
+        </div>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <NuxtLink
-            v-for="category in data?.categories ?? []"
+            v-for="category in (data?.categories ?? []).slice(0, 3)"
             :key="category.id"
             :to="`/products?category=${category.slug}`"
             class="flex flex-col items-center gap-2 rounded-xl border border-default p-4 text-center transition hover:shadow-md"

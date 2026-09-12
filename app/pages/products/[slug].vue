@@ -118,7 +118,7 @@ useHead(() => ({
       class="mb-6"
       :items="[
         { label: 'Trang chủ', to: '/' },
-        { label: product.category.name, to: `/categories/${product.category.slug}` },
+        ...(product.categories[0] ? [{ label: product.categories[0].name, to: `/categories/${product.categories[0].slug}` }] : []),
         { label: product.name },
       ]"
     />
@@ -150,7 +150,7 @@ useHead(() => ({
         <div class="flex items-start justify-between gap-3">
           <div>
             <p class="text-sm text-muted">
-              {{ product.category.name }}
+              {{ product.categories.map(c => c.name).join(', ') }}
             </p>
             <h1 class="mt-1 text-2xl font-bold text-highlighted">
               {{ product.name }}

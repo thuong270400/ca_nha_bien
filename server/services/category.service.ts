@@ -43,9 +43,10 @@ export async function updateCategory(id: string, input: CategoryUpdateInput) {
 
 export async function deleteCategory(id: string) {
   await getCategoryById(id)
-  // Product.categoryId is a required FK (Restrict) — a soft-deleted product row still
-  // references the category, so it must be counted too or the delete below would 500.
-  const productCount = await prisma.product.count({ where: { categoryId: id } })
+  // A soft-deleted product row still references the category via the join
+  // table, so it must be counted too or the delete below could leave it
+  // dangling on the product's category list.
+  const productCount = await prisma.product.count({ where: { categories: { some: { id } } } })
   if (productCount > 0) {
     throw Errors.badRequest('Không thể xoá danh mục đang có sản phẩm (kể cả sản phẩm đã ẩn)')
   }

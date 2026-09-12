@@ -5,7 +5,7 @@ import type { ProductCreateInput, ProductListQuery, ProductUpdateInput } from '.
 import { deleteImage } from './upload.service'
 
 export const productInclude = {
-  category: true,
+  categories: true,
   images: { orderBy: { position: 'asc' as const } },
   variants: { orderBy: { price: 'asc' as const } },
   tags: true,
@@ -39,7 +39,7 @@ export async function listProducts(query: ProductListQuery, opts: { includeInact
     ]
   }
   if (query.category) {
-    where.category = { slug: query.category }
+    where.categories = { some: { slug: query.category } }
   }
   if (query.featured !== undefined) {
     where.isFeatured = query.featured
@@ -116,9 +116,10 @@ export async function getProductBySlug(slug: string, opts: { includeInactive?: b
   return product
 }
 
-export async function getRelatedProducts(productId: string, categoryId: string, limit = 8) {
+export async function getRelatedProducts(productId: string, categoryIds: string[], limit = 8) {
+  if (!categoryIds.length) return []
   return prisma.product.findMany({
-    where: { id: { not: productId }, categoryId, deletedAt: null, status: 'ACTIVE' },
+    where: { id: { not: productId }, categories: { some: { id: { in: categoryIds } } }, deletedAt: null, status: 'ACTIVE' },
     include: productInclude,
     take: limit,
     orderBy: { createdAt: 'desc' },
@@ -156,7 +157,7 @@ export async function getFeaturedProducts(limit = 8) {
 
 export async function getDistinctUnits(categorySlug?: string) {
   const rows = await prisma.productVariant.findMany({
-    where: { product: { ...activeProductWhere, ...(categorySlug ? { category: { slug: categorySlug } } : {}) } },
+    where: { product: { ...activeProductWhere, ...(categorySlug ? { categories: { some: { slug: categorySlug } } } : {}) } },
     distinct: ['unit'],
     select: { unit: true },
     orderBy: { unit: 'asc' },
@@ -199,7 +200,7 @@ export async function createProduct(input: ProductCreateInput) {
         origin: input.origin,
         status: input.status ?? 'ACTIVE',
         isFeatured: input.isFeatured ?? false,
-        categoryId: input.categoryId,
+        categories: { connect: input.categoryIds.map(id => ({ id })) },
         price: defaultVariant.price,
         compareAtPrice: defaultVariant.compareAtPrice,
         images: input.images?.length
@@ -249,7 +250,7 @@ export async function updateProduct(id: string, input: ProductUpdateInput) {
         status: input.status,
         deletedAt: input.status === 'ACTIVE' ? null : undefined,
         isFeatured: input.isFeatured,
-        categoryId: input.categoryId,
+        categories: input.categoryIds ? { set: input.categoryIds.map(id => ({ id })) } : undefined,
         price: defaultVariant.price,
         compareAtPrice: defaultVariant.compareAtPrice,
         tags: input.tagIds ? { set: input.tagIds.map(tagId => ({ id: tagId })) } : undefined,

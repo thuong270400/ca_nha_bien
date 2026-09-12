@@ -143,7 +143,7 @@ useSeoMeta({ title: 'Sản phẩm - Cá Nhà Biển Admin' })
               <span class="font-medium text-highlighted">{{ product.name }}</span>
             </td>
             <td class="px-4 py-3 text-muted">
-              {{ product.category.name }}
+              {{ product.categories.map(c => c.name).join(', ') }}
             </td>
             <td class="px-4 py-3">
               {{ formatVnd(product.price) }}

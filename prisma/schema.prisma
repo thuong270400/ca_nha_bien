@@ -137,7 +137,6 @@ model Product {
   origin      String?
   status      ProductStatus @default(ACTIVE)
   isFeatured  Boolean       @default(false)
-  categoryId  String
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   deletedAt   DateTime?
@@ -158,7 +157,7 @@ model Product {
   avgRating   Float @default(0)
   reviewCount Int   @default(0)
 
-  category   Category         @relation(fields: [categoryId], references: [id])
+  categories Category[]
   images     ProductImage[]
   variants   ProductVariant[]
   cartItems  CartItem[]
@@ -168,7 +167,6 @@ model Product {
   tags       Tag[]
 
   @@index([slug])
-  @@index([categoryId])
   @@index([status])
   @@index([price])
   @@index([soldCount])

@@ -30,7 +30,7 @@ export const productCreateSchema = z.object({
   origin: z.string().trim().max(200).optional(),
   status: productStatusSchema.optional(),
   isFeatured: z.boolean().optional(),
-  categoryId: z.string().trim().min(1, 'Vui lòng chọn danh mục'),
+  categoryIds: z.array(z.string().trim().min(1)).min(1, 'Vui lòng chọn ít nhất 1 danh mục'),
   images: z.array(productImageSchema).optional(),
   variants: z.array(productVariantSchema).min(1, 'Cần ít nhất 1 biến thể (đơn vị bán)'),
   tagIds: z.array(z.string()).optional(),

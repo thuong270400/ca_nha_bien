@@ -41,7 +41,7 @@ interface SeedVariant {
 interface SeedProduct {
   name: string
   slug: string
-  categorySlug: (typeof categorySeeds)[number]['slug']
+  categorySlugs: Array<(typeof categorySeeds)[number]['slug']>
   origin: string
   description: string
   isFeatured?: boolean
@@ -51,21 +51,21 @@ interface SeedProduct {
 
 const productSeeds: SeedProduct[] = [
   // Cá nguyên con cấp đông
-  { name: 'Cá Bớp', slug: 'ca-bop', categorySlug: 'ca-nguyen-con-cap-dong', origin: 'Phú Quốc', description: 'Cá bớp nguyên con, cấp đông ngay sau đánh bắt, thịt dai ngọt, ít xương, phù hợp nấu lẩu hoặc nướng muối ớt.', soldCount: 34, variants: [{ unit: 'kg', price: 180000, stock: 15, isDefault: true }] },
-  { name: 'Cá Chim Trắng', slug: 'ca-chim-trang', categorySlug: 'ca-nguyen-con-cap-dong', origin: 'Nha Trang', description: 'Cá chim trắng nguyên con cấp đông, thịt béo thơm, thích hợp chiên giòn hoặc hấp.', soldCount: 41, variants: [{ unit: 'kg', price: 150000, stock: 4, isDefault: true }, { unit: 'con', price: 95000, stock: 12 }] },
-  { name: 'Cá Nục', slug: 'ca-nuc', categorySlug: 'ca-nguyen-con-cap-dong', origin: 'Bình Thuận', description: 'Cá nục nguyên con cấp đông, thịt ngọt, giá bình dân, hợp kho hoặc chiên.', soldCount: 72, variants: [{ unit: 'kg', price: 55000, stock: 40, isDefault: true }] },
+  { name: 'Cá Bớp', slug: 'ca-bop', categorySlugs: ['ca-nguyen-con-cap-dong'], origin: 'Phú Quốc', description: 'Cá bớp nguyên con, cấp đông ngay sau đánh bắt, thịt dai ngọt, ít xương, phù hợp nấu lẩu hoặc nướng muối ớt.', soldCount: 34, variants: [{ unit: 'kg', price: 180000, stock: 15, isDefault: true }] },
+  { name: 'Cá Chim Trắng', slug: 'ca-chim-trang', categorySlugs: ['ca-nguyen-con-cap-dong'], origin: 'Nha Trang', description: 'Cá chim trắng nguyên con cấp đông, thịt béo thơm, thích hợp chiên giòn hoặc hấp.', soldCount: 41, variants: [{ unit: 'kg', price: 150000, stock: 4, isDefault: true }, { unit: 'con', price: 95000, stock: 12 }] },
+  { name: 'Cá Nục', slug: 'ca-nuc', categorySlugs: ['ca-nguyen-con-cap-dong', 'combo-uu-dai'], origin: 'Bình Thuận', description: 'Cá nục nguyên con cấp đông, thịt ngọt, giá bình dân, hợp kho hoặc chiên.', soldCount: 72, variants: [{ unit: 'kg', price: 55000, stock: 40, isDefault: true }] },
 
   // Cá phi lê cấp đông
-  { name: 'Cá Ngừ Đại Dương Phi Lê', slug: 'ca-ngu-dai-duong', categorySlug: 'ca-phi-le', origin: 'Phú Yên', description: 'Cá ngừ đại dương phi lê, cấp đông theo công nghệ IQF giữ trọn độ tươi, thích hợp làm sashimi hoặc áp chảo.', isFeatured: true, soldCount: 58, variants: [{ unit: '500g', price: 135000, compareAtPrice: 155000, stock: 18, isDefault: true }] },
-  { name: 'Cá Hồi Phi Lê Cấp Đông', slug: 'ca-hoi-dong-lanh', categorySlug: 'ca-phi-le', origin: 'Nhập khẩu Na Uy', description: 'Cá hồi phi lê cấp đông đạt chuẩn xuất khẩu, giữ trọn dinh dưỡng.', isFeatured: true, soldCount: 78, variants: [{ unit: '500g', price: 175000, compareAtPrice: 195000, stock: 20, isDefault: true }] },
+  { name: 'Cá Ngừ Đại Dương Phi Lê', slug: 'ca-ngu-dai-duong', categorySlugs: ['ca-phi-le'], origin: 'Phú Yên', description: 'Cá ngừ đại dương phi lê, cấp đông theo công nghệ IQF giữ trọn độ tươi, thích hợp làm sashimi hoặc áp chảo.', isFeatured: true, soldCount: 58, variants: [{ unit: '500g', price: 135000, compareAtPrice: 155000, stock: 18, isDefault: true }] },
+  { name: 'Cá Hồi Phi Lê Cấp Đông', slug: 'ca-hoi-dong-lanh', categorySlugs: ['ca-phi-le'], origin: 'Nhập khẩu Na Uy', description: 'Cá hồi phi lê cấp đông đạt chuẩn xuất khẩu, giữ trọn dinh dưỡng.', isFeatured: true, soldCount: 78, variants: [{ unit: '500g', price: 175000, compareAtPrice: 195000, stock: 20, isDefault: true }] },
 
   // Cá cắt khúc/cắt lát cấp đông
-  { name: 'Cá Thu Cắt Khúc Cấp Đông', slug: 'ca-thu', categorySlug: 'ca-cat-khuc-cap-dong', origin: 'Vũng Tàu', description: 'Cá thu cắt khúc, cấp đông ngay sau đánh bắt để giữ trọn độ tươi, thịt chắc, ít xương dăm, thích hợp chiên hoặc kho.', isFeatured: true, soldCount: 86, variants: [{ unit: 'kg', price: 120000, compareAtPrice: 140000, stock: 20, isDefault: true }, { unit: '500g', price: 65000, stock: 30 }] },
-  { name: 'Cá Saba Cắt Lát Cấp Đông', slug: 'ca-saba-dong-lanh', categorySlug: 'ca-cat-khuc-cap-dong', origin: 'Nhập khẩu Nhật Bản', description: 'Cá saba cắt lát, cấp đông theo chuẩn Nhật Bản, béo thơm, tiện lợi cho bữa ăn nhanh.', soldCount: 53, variants: [{ unit: 'hộp', price: 89000, stock: 24, isDefault: true }] },
+  { name: 'Cá Thu Cắt Khúc Cấp Đông', slug: 'ca-thu', categorySlugs: ['ca-cat-khuc-cap-dong'], origin: 'Vũng Tàu', description: 'Cá thu cắt khúc, cấp đông ngay sau đánh bắt để giữ trọn độ tươi, thịt chắc, ít xương dăm, thích hợp chiên hoặc kho.', isFeatured: true, soldCount: 86, variants: [{ unit: 'kg', price: 120000, compareAtPrice: 140000, stock: 20, isDefault: true }, { unit: '500g', price: 65000, stock: 30 }] },
+  { name: 'Cá Saba Cắt Lát Cấp Đông', slug: 'ca-saba-dong-lanh', categorySlugs: ['ca-cat-khuc-cap-dong'], origin: 'Nhập khẩu Nhật Bản', description: 'Cá saba cắt lát, cấp đông theo chuẩn Nhật Bản, béo thơm, tiện lợi cho bữa ăn nhanh.', soldCount: 53, variants: [{ unit: 'hộp', price: 89000, stock: 24, isDefault: true }] },
 
   // Cá đặc sản cấp đông (cá biển cao cấp)
-  { name: 'Cá Hồng', slug: 'ca-hong', categorySlug: 'ca-dac-san', origin: 'Kiên Giang', description: 'Cá hồng cấp đông, thịt trắng chắc, ít tanh, hợp chưng tương hoặc chiên xù.', soldCount: 22, variants: [{ unit: 'kg', price: 165000, stock: 10, isDefault: true }] },
-  { name: 'Cá Mú', slug: 'ca-mu', categorySlug: 'ca-dac-san', origin: 'Khánh Hòa', description: 'Cá mú cấp đông nguyên con, thịt dai chắc, thường dùng hấp xì dầu hoặc nấu lẩu.', soldCount: 19, variants: [{ unit: 'kg', price: 320000, compareAtPrice: 360000, stock: 8, isDefault: true }] },
+  { name: 'Cá Hồng', slug: 'ca-hong', categorySlugs: ['ca-dac-san'], origin: 'Kiên Giang', description: 'Cá hồng cấp đông, thịt trắng chắc, ít tanh, hợp chưng tương hoặc chiên xù.', soldCount: 22, variants: [{ unit: 'kg', price: 165000, stock: 10, isDefault: true }] },
+  { name: 'Cá Mú', slug: 'ca-mu', categorySlugs: ['ca-dac-san', 'combo-uu-dai'], origin: 'Khánh Hòa', description: 'Cá mú cấp đông nguyên con, thịt dai chắc, thường dùng hấp xì dầu hoặc nấu lẩu.', soldCount: 19, variants: [{ unit: 'kg', price: 320000, compareAtPrice: 360000, stock: 8, isDefault: true }] },
 ]
 
 async function main() {
@@ -81,7 +81,7 @@ async function main() {
 
   console.log('Seeding products...')
   for (const p of productSeeds) {
-    const categoryId = categoryBySlug.get(p.categorySlug)!
+    const categoryIds = p.categorySlugs.map(slug => categoryBySlug.get(slug)!)
     const defaultVariant = p.variants.find(v => v.isDefault) ?? p.variants[0]!
 
     await prisma.product.create({
@@ -93,11 +93,11 @@ async function main() {
         status: 'ACTIVE',
         isFeatured: p.isFeatured ?? false,
         soldCount: p.soldCount ?? 0,
-        categoryId,
+        categories: { connect: categoryIds.map(id => ({ id })) },
         price: defaultVariant.price,
         compareAtPrice: defaultVariant.compareAtPrice,
         images: {
-          create: [{ url: `/images/seed/${p.categorySlug}.svg`, alt: p.name, position: 0 }],
+          create: [{ url: `/images/seed/${p.categorySlugs[0]}.svg`, alt: p.name, position: 0 }],
         },
         variants: {
           create: p.variants.map(v => ({

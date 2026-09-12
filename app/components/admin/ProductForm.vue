@@ -31,10 +31,12 @@ const form = reactive({
   slug: props.initial?.slug ?? '',
   description: props.initial?.description ?? '',
   origin: props.initial?.origin ?? '',
-  categoryId: props.initial?.categoryId ?? '',
   status: props.initial?.status ?? 'ACTIVE',
   isFeatured: props.initial?.isFeatured ?? false,
 })
+
+const categoryIds = ref<string[]>(props.initial?.categories.map(c => c.id) ?? [])
+const categoryItems = computed(() => props.categories.map(c => ({ label: c.name, value: c.id })))
 
 const slugTouched = ref(Boolean(props.initial))
 watch(() => form.name, (name) => {
@@ -142,7 +144,7 @@ function submit() {
     slug: form.slug,
     description: form.description || undefined,
     origin: form.origin || undefined,
-    categoryId: form.categoryId,
+    categoryIds: categoryIds.value,
     status: form.status,
     isFeatured: form.isFeatured,
     images: images.value.map((img, idx) => ({ id: img.id, url: img.url, alt: img.alt || undefined, position: idx })),
@@ -175,10 +177,13 @@ function submit() {
         <UFormField label="Slug" required>
           <UInput v-model="form.slug" class="w-full" @input="slugTouched = true" />
         </UFormField>
-        <UFormField label="Danh mục" required>
-          <USelect
-            v-model="form.categoryId"
-            :items="categories.map(c => ({ label: c.name, value: c.id }))"
+        <UFormField label="Danh mục" required class="sm:col-span-2">
+          <USelectMenu
+            v-model="categoryIds"
+            multiple
+            value-key="value"
+            :items="categoryItems"
+            placeholder="Chọn danh mục"
             class="w-full"
           />
         </UFormField>

@@ -109,7 +109,7 @@ const discountPercent = computed(() => {
 
     <div class="flex flex-1 flex-col gap-1 p-3">
       <p class="text-[11px] text-muted">
-        {{ product.category.name }}
+        {{ product.categories.map(c => c.name).join(', ') }}
       </p>
       <h3 class="line-clamp-2 text-sm font-medium text-highlighted">
         {{ product.name }}

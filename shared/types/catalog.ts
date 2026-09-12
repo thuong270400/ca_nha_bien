@@ -44,13 +44,12 @@ export interface Product {
   status: ProductStatus
   deletedAt: string | null
   isFeatured: boolean
-  categoryId: string
   price: string | null
   compareAtPrice: string | null
   soldCount: number
   avgRating: number
   reviewCount: number
-  category: Category
+  categories: Category[]
   images: ProductImage[]
   variants: ProductVariant[]
   tags: Tag[]

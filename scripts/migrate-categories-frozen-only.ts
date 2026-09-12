@@ -75,12 +75,12 @@ async function main() {
   if (!wholeCategory) {
     console.log(`  no "${WHOLE_TO_WHOLE_SLUG}" category found — already migrated, skipping.`)
   } else {
-    const products = await prisma.product.findMany({ where: { categoryId: wholeCategory.id } })
+    const products = await prisma.product.findMany({ where: { categories: { some: { id: wholeCategory.id } } } })
     for (const p of products) {
       console.log(`  "${p.name}" -> ca-nguyen-con-cap-dong`)
       if (APPLY) {
         const targetId = idBySlug.get('ca-nguyen-con-cap-dong')!
-        await prisma.product.update({ where: { id: p.id }, data: { categoryId: targetId } })
+        await prisma.product.update({ where: { id: p.id }, data: { categories: { set: [{ id: targetId }] } } })
       }
     }
   }
@@ -90,7 +90,7 @@ async function main() {
   if (!frozenCategory) {
     console.log(`  no "${FROZEN_SPLIT_SLUG}" category found — already migrated, skipping.`)
   } else {
-    const products = await prisma.product.findMany({ where: { categoryId: frozenCategory.id } })
+    const products = await prisma.product.findMany({ where: { categories: { some: { id: frozenCategory.id } } } })
     for (const p of products) {
       const targetSlug = FILLET_NAMES.includes(p.name)
         ? 'ca-phi-le'
@@ -109,7 +109,7 @@ async function main() {
           ? await prisma.category.findUniqueOrThrow({ where: { slug: RETIRE_FALLBACK_SLUG } })
           : null
         const targetId = targetCategory ? targetCategory.id : idBySlug.get(targetSlug)!
-        await prisma.product.update({ where: { id: p.id }, data: { categoryId: targetId } })
+        await prisma.product.update({ where: { id: p.id }, data: { categories: { set: [{ id: targetId }] } } })
       }
     }
   }
@@ -121,7 +121,7 @@ async function main() {
       console.log(`  "${slug}" already gone`)
       continue
     }
-    const remaining = await prisma.product.count({ where: { categoryId: category.id } })
+    const remaining = await prisma.product.count({ where: { categories: { some: { id: category.id } } } })
     if (remaining === 0) {
       console.log(`  delete "${slug}" (0 products left)`)
       if (APPLY) await prisma.category.delete({ where: { id: category.id } })
@@ -137,7 +137,7 @@ async function main() {
       console.log(`  "${slug}": not present`)
       continue
     }
-    const products = await prisma.product.findMany({ where: { categoryId: category.id } })
+    const products = await prisma.product.findMany({ where: { categories: { some: { id: category.id } } } })
     console.log(`  "${slug}" (isActive=${category.isActive}): ${products.length} product(s)`)
     for (const p of products) console.log(`    - ${p.name}${p.deletedAt ? ' [deleted]' : ''}`)
   }
