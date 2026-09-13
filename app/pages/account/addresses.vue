@@ -69,8 +69,11 @@ async function save() {
   }
 }
 
+const confirm = useConfirm()
 const deletingId = ref<string | null>(null)
 async function remove(address: AddressView) {
+  const ok = await confirm({ title: 'Xoá địa chỉ này?' })
+  if (!ok) return
   deletingId.value = address.id
   try {
     await $fetch(`/api/addresses/${address.id}`, { method: 'DELETE' })

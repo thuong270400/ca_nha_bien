@@ -190,17 +190,18 @@ useCanonical(activeCategory.value ? `/products?category=${activeCategory.value.s
         </div>
 
         <div v-if="tags?.length" class="mb-4 flex flex-wrap gap-2">
-          <UButton
+          <button
             v-for="tag in tags"
             :key="tag.id"
-            size="xs"
-            :variant="selectedTags.includes(tag.slug) ? 'solid' : 'outline'"
-            :color="selectedTags.includes(tag.slug) ? 'primary' : 'neutral'"
-            class="rounded-full"
+            type="button"
+            class="rounded border px-3 py-1 text-xs font-medium transition"
+            :style="selectedTags.includes(tag.slug)
+              ? { backgroundColor: tag.color, borderColor: tag.color, color: tagTextColor(tag.color) }
+              : { borderColor: tag.color, color: tag.color }"
             @click="toggleTag(tag.slug)"
           >
             {{ tag.name }}
-          </UButton>
+          </button>
         </div>
 
         <p class="mb-4 text-sm text-muted">

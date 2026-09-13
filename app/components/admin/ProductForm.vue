@@ -203,17 +203,18 @@ function submit() {
         <UCheckbox v-model="form.isFeatured" label="Sản phẩm nổi bật" class="sm:col-span-2" />
         <UFormField label="Tag" class="sm:col-span-2">
           <div v-if="tags.length" class="flex flex-wrap gap-2">
-            <UButton
+            <button
               v-for="tag in tags"
               :key="tag.id"
-              size="xs"
-              :variant="selectedTagIds.includes(tag.id) ? 'solid' : 'outline'"
-              :color="selectedTagIds.includes(tag.id) ? 'primary' : 'neutral'"
-              class="rounded-full"
+              type="button"
+              class="rounded border px-2.5 py-1 text-xs font-medium transition"
+              :style="selectedTagIds.includes(tag.id)
+                ? { backgroundColor: tag.color, borderColor: tag.color, color: tagTextColor(tag.color) }
+                : { borderColor: tag.color, color: tag.color }"
               @click="toggleTag(tag.id)"
             >
               {{ tag.name }}
-            </UButton>
+            </button>
           </div>
           <p v-else class="text-sm text-muted">
             Chưa có tag nào — tạo tag ở mục "Tag" trong menu quản trị.

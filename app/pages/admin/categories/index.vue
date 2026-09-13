@@ -10,7 +10,16 @@ const open = ref(false)
 const saving = ref(false)
 const editing = ref<Category | null>(null)
 
-const form = reactive({ name: '', slug: '', description: '', imageUrl: '', isActive: true, isFeatured: false })
+const form = reactive({
+  name: '',
+  slug: '',
+  description: '',
+  imageUrl: '',
+  isActive: true,
+  isFeatured: false,
+  limitProducts: false,
+  homepageLimit: 8,
+})
 const slugTouched = ref(false)
 
 const MAX_FEATURED = 3
@@ -32,6 +41,8 @@ function openCreate() {
   form.imageUrl = ''
   form.isActive = true
   form.isFeatured = false
+  form.limitProducts = false
+  form.homepageLimit = 8
   slugTouched.value = false
   open.value = true
 }
@@ -44,6 +55,8 @@ function openEdit(category: Category) {
   form.imageUrl = category.imageUrl ?? ''
   form.isActive = category.isActive
   form.isFeatured = category.isFeatured
+  form.limitProducts = category.homepageLimit !== null
+  form.homepageLimit = category.homepageLimit ?? 8
   slugTouched.value = true
   open.value = true
 }
@@ -58,6 +71,7 @@ async function save() {
       imageUrl: form.imageUrl || undefined,
       isActive: form.isActive,
       isFeatured: form.isFeatured,
+      homepageLimit: form.limitProducts ? form.homepageLimit : null,
     }
     if (editing.value) {
       await $fetch(`/api/categories/${editing.value.id}`, { method: 'PATCH', body: payload })
@@ -75,8 +89,11 @@ async function save() {
   }
 }
 
+const confirm = useConfirm()
 const deletingId = ref<string | null>(null)
 async function remove(category: Category) {
+  const ok = await confirm({ title: `Xoá danh mục "${category.name}"?` })
+  if (!ok) return
   deletingId.value = category.id
   try {
     await $fetch(`/api/categories/${category.id}`, { method: 'DELETE' })
@@ -142,9 +159,14 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
               </UBadge>
             </td>
             <td class="px-4 py-3">
-              <UBadge v-if="category.isFeatured" color="primary">
-                Đang hiển thị
-              </UBadge>
+              <div v-if="category.isFeatured" class="flex items-center gap-2">
+                <UBadge color="primary">
+                  Đang hiển thị
+                </UBadge>
+                <span class="text-xs text-muted">
+                  {{ category.homepageLimit ? `Tối đa ${category.homepageLimit} sản phẩm` : 'Tất cả sản phẩm' }}
+                </span>
+              </div>
             </td>
             <td class="px-4 py-3 text-right">
               <div class="flex justify-end gap-2">
@@ -193,6 +215,16 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
               ? `Đã đạt tối đa ${MAX_FEATURED} danh mục — bỏ chọn danh mục khác trước`
               : `Tối đa ${MAX_FEATURED} danh mục hiển thị trên trang chủ`"
           />
+          <div v-if="form.isFeatured" class="space-y-3 rounded-lg border border-default p-3">
+            <UCheckbox
+              v-model="form.limitProducts"
+              label="Giới hạn số sản phẩm hiển thị trên trang chủ"
+              description="Sản phẩm vượt quá số lượng này sẽ ẩn, kèm nút “Xem tất cả” dẫn đến trang danh mục"
+            />
+            <UFormField v-if="form.limitProducts" label="Số sản phẩm hiển thị">
+              <UInputNumber v-model="form.homepageLimit" :min="1" class="w-full" />
+            </UFormField>
+          </div>
         </div>
       </template>
       <template #footer>

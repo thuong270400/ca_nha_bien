@@ -98,8 +98,11 @@ async function save() {
   }
 }
 
+const confirm = useConfirm()
 const deletingId = ref<string | null>(null)
 async function remove(banner: Banner) {
+  const ok = await confirm({ title: `Xoá banner "${banner.title || '(không có tiêu đề)'}"?` })
+  if (!ok) return
   deletingId.value = banner.id
   try {
     await $fetch(`/api/admin/banners/${banner.id}`, { method: 'DELETE' })

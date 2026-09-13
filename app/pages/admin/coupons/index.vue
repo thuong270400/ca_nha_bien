@@ -123,8 +123,11 @@ async function toggleActive(coupon: CouponView) {
   }
 }
 
+const confirm = useConfirm()
 const deletingId = ref<string | null>(null)
 async function remove(coupon: CouponView) {
+  const ok = await confirm({ title: `Xoá mã giảm giá "${coupon.code}"?` })
+  if (!ok) return
   deletingId.value = coupon.id
   try {
     await $fetch(`/api/admin/coupons/${coupon.id}`, { method: 'DELETE' })

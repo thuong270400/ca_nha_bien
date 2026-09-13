@@ -8,6 +8,7 @@ export const categoryCreateSchema = z.object({
   imageUrl: z.string().trim().max(1000).optional(),
   isActive: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
+  homepageLimit: z.number().int().min(1, 'Giới hạn phải lớn hơn 0').nullable().optional(),
   position: z.number().int().optional(),
 })
 

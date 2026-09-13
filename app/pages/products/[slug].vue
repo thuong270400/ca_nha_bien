@@ -44,6 +44,8 @@ const editOpen = ref(false)
 
 const isAdmin = computed(() => user.value?.role === 'ADMIN')
 const isWishlisted = computed(() => product.value ? wishlistStore.has(product.value.id) : false)
+const imageTags = computed(() => product.value?.tags.filter(t => t.showOnImage) ?? [])
+const labelTags = computed(() => product.value?.tags.filter(t => !t.showOnImage) ?? [])
 
 function onProductUpdated(updated: Product) {
   if (!product.value) return
@@ -125,12 +127,22 @@ useHead(() => ({
 
     <div class="grid grid-cols-1 gap-10 lg:grid-cols-2">
       <div>
-        <div class="aspect-square overflow-hidden rounded-xl bg-elevated">
+        <div class="relative aspect-square overflow-hidden rounded-xl bg-elevated">
           <img
             :src="product.images[selectedImageIndex]?.url ?? '/images/placeholder-fish.svg'"
             :alt="product.images[selectedImageIndex]?.alt ?? product.name"
             class="size-full object-cover"
           >
+          <div v-if="imageTags.length" class="absolute left-3 top-3 flex flex-col items-start gap-1">
+            <span
+              v-for="tag in imageTags"
+              :key="tag.id"
+              class="rounded px-2.5 py-1 text-xs font-semibold"
+              :style="{ backgroundColor: tag.color, color: tagTextColor(tag.color) }"
+            >
+              {{ tag.name }}
+            </span>
+          </div>
         </div>
         <div v-if="product.images.length > 1" class="mt-3 flex gap-2">
           <button
@@ -155,6 +167,16 @@ useHead(() => ({
             <h1 class="mt-1 text-2xl font-bold text-highlighted">
               {{ product.name }}
             </h1>
+            <div v-if="labelTags.length" class="mt-2 flex flex-wrap gap-1.5">
+              <span
+                v-for="tag in labelTags"
+                :key="tag.id"
+                class="inline-flex items-center rounded px-2.5 py-0.5 text-xs font-medium"
+                :style="{ backgroundColor: tag.color, color: tagTextColor(tag.color) }"
+              >
+                {{ tag.name }}
+              </span>
+            </div>
           </div>
           <UButton
             v-if="isAdmin"

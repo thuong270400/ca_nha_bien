@@ -1,12 +1,37 @@
 <script setup lang="ts">
+import type { SocialLink } from '#shared/types/content'
+import { SOCIAL_ICON_PRESETS } from '#shared/types/content'
+
 const year = new Date().getFullYear()
 const { contact } = useAppConfig()
+
+const { data: socialLinks } = await useFetch<SocialLink[]>('/api/social-links', { key: 'social-links' })
+const footerLinks = computed(() => socialLinks.value?.filter(link => link.displayLocation === 'FOOTER') ?? [])
+
+function iconFor(key: string | null) {
+  return SOCIAL_ICON_PRESETS.find(preset => preset.key === key)?.icon ?? 'i-lucide-link'
+}
 </script>
 
 <template>
   <UFooter>
     <template #top>
       <UContainer>
+        <div v-if="footerLinks.length" class="flex flex-wrap items-center justify-center gap-3 border-b border-default py-6">
+          <a
+            v-for="link in footerLinks"
+            :key="link.id"
+            :href="link.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex size-10 items-center justify-center overflow-hidden rounded-full bg-elevated text-muted transition hover:bg-primary hover:text-inverted"
+            :aria-label="link.label || 'Liên kết mạng xã hội'"
+          >
+            <img v-if="link.iconType === 'CUSTOM' && link.imageUrl" :src="link.imageUrl" :alt="link.label ?? ''" class="size-full object-cover">
+            <UIcon v-else :name="iconFor(link.iconKey)" class="size-5" />
+          </a>
+        </div>
+
         <div class="grid grid-cols-1 gap-8 py-8 sm:grid-cols-2 lg:grid-cols-5">
           <div>
             <div class="flex items-center gap-2 text-lg font-bold text-primary">

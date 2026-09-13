@@ -33,8 +33,11 @@ function setPage(page: number) {
   router.push({ path: '/admin/posts', query: { ...route.query, page } })
 }
 
+const confirm = useConfirm()
 const deletingId = ref<string | null>(null)
-async function deletePost(id: string) {
+async function deletePost(id: string, title: string) {
+  const ok = await confirm({ title: `Xoá bài viết "${title}"?` })
+  if (!ok) return
   deletingId.value = id
   try {
     await $fetch(`/api/admin/posts/${id}`, { method: 'DELETE' })
@@ -107,7 +110,7 @@ useSeoMeta({ title: 'Bài viết - Cá Nhà Biển Admin' })
                   variant="ghost"
                   color="error"
                   :loading="deletingId === post.id"
-                  @click="deletePost(post.id)"
+                  @click="deletePost(post.id, post.title)"
                 />
               </div>
             </td>

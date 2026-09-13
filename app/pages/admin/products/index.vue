@@ -38,8 +38,11 @@ function setLimit(limit: number) {
   router.push({ path: '/admin/products', query: { ...route.query, limit, page: undefined } })
 }
 
+const confirm = useConfirm()
 const deletingId = ref<string | null>(null)
-async function deleteProduct(id: string) {
+async function deleteProduct(id: string, name: string) {
+  const ok = await confirm({ title: `Ẩn sản phẩm "${name}"?`, description: 'Sản phẩm sẽ ngừng hiển thị trên cửa hàng, bạn có thể khôi phục sau.', confirmLabel: 'Ẩn' })
+  if (!ok) return
   deletingId.value = id
   try {
     await $fetch(`/api/products/${id}`, { method: 'DELETE' })
@@ -70,7 +73,8 @@ async function restoreProduct(id: string) {
 
 const hardDeletingId = ref<string | null>(null)
 async function hardDeleteProduct(id: string, name: string) {
-  if (!confirm(`Xoá vĩnh viễn sản phẩm "${name}"? Hành động này không thể hoàn tác.`)) return
+  const ok = await confirm({ title: `Xoá vĩnh viễn sản phẩm "${name}"?` })
+  if (!ok) return
   hardDeletingId.value = id
   try {
     await $fetch(`/api/products/${id}/permanent`, { method: 'DELETE' })
@@ -184,7 +188,7 @@ useSeoMeta({ title: 'Sản phẩm - Cá Nhà Biển Admin' })
                   variant="ghost"
                   color="error"
                   :loading="deletingId === product.id"
-                  @click="deleteProduct(product.id)"
+                  @click="deleteProduct(product.id, product.name)"
                 />
               </div>
             </td>

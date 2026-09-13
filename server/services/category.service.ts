@@ -1,6 +1,7 @@
 import { Errors } from '../utils/errors'
 import { prisma } from '../utils/prisma'
 import type { CategoryCreateInput, CategoryUpdateInput } from '../utils/schemas/category.schema'
+import { activeProductWhere, productInclude } from './product.service'
 
 export async function listCategories(activeOnly?: boolean) {
   return prisma.category.findMany({
@@ -9,12 +10,34 @@ export async function listCategories(activeOnly?: boolean) {
   })
 }
 
-export async function getFeaturedCategories(limit = 3) {
-  return prisma.category.findMany({
+/**
+ * Featured categories for the landing page, each with its own products —
+ * capped at `homepageLimit` (null = show every product in that category).
+ * `hasMore` tells the frontend whether to render a "Xem tất cả" button.
+ */
+export async function getHomepageCategorySections(maxCategories = 3) {
+  const categories = await prisma.category.findMany({
     where: { isActive: true, isFeatured: true },
     orderBy: [{ position: 'asc' }, { name: 'asc' }],
-    take: limit,
+    take: maxCategories,
   })
+
+  return Promise.all(categories.map(async (category) => {
+    const where = { ...activeProductWhere, categories: { some: { id: category.id } } }
+    const limit = category.homepageLimit ?? undefined
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: productInclude,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      limit !== undefined ? prisma.product.count({ where }) : Promise.resolve(0),
+    ])
+
+    return { ...category, products, hasMore: limit !== undefined && total > limit }
+  }))
 }
 
 export async function getCategoryById(id: string) {

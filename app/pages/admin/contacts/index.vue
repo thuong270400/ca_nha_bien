@@ -46,8 +46,11 @@ async function view(message: ContactMessage) {
   }
 }
 
+const confirm = useConfirm()
 const deletingId = ref<string | null>(null)
 async function remove(message: ContactMessage) {
+  const ok = await confirm({ title: `Xoá tin nhắn của "${message.name}"?` })
+  if (!ok) return
   deletingId.value = message.id
   try {
     await $fetch(`/api/admin/contacts/${message.id}`, { method: 'DELETE' })

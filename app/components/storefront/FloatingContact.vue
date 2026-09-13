@@ -1,5 +1,14 @@
 <script setup lang="ts">
-const { contact } = useAppConfig()
+import type { SocialLink } from '#shared/types/content'
+import { SOCIAL_ICON_PRESETS } from '#shared/types/content'
+
+const { data: socialLinks } = await useFetch<SocialLink[]>('/api/social-links', { key: 'social-links' })
+const fixedLinks = computed(() => socialLinks.value?.filter(link => link.displayLocation === 'FIXED') ?? [])
+
+function iconFor(key: string | null) {
+  return SOCIAL_ICON_PRESETS.find(preset => preset.key === key)?.icon ?? 'i-lucide-link'
+}
+
 const { y } = useWindowScroll()
 const showScrollTop = computed(() => y.value > 400)
 
@@ -28,28 +37,17 @@ function scrollToTop() {
       />
     </Transition>
 
-    <UButton
-      :to="`https://zalo.me/${contact.hotline}`"
+    <a
+      v-for="link in fixedLinks"
+      :key="link.id"
+      :href="link.url"
       target="_blank"
       rel="noopener noreferrer"
-      icon="i-simple-icons-zalo"
-      color="primary"
-      variant="solid"
-      size="lg"
-      class="rounded-full shadow-lg"
-      aria-label="Chat Zalo"
-    />
-
-    <UButton
-      to="https://m.me/fiship"
-      target="_blank"
-      rel="noopener noreferrer"
-      icon="i-simple-icons-messenger"
-      color="neutral"
-      variant="solid"
-      size="lg"
-      class="rounded-full shadow-lg"
-      aria-label="Chat Messenger"
-    />
+      class="inline-flex items-center justify-center rounded-full bg-inverted p-2 text-inverted shadow-lg transition-colors hover:bg-inverted/90"
+      :aria-label="link.label || 'Liên kết mạng xã hội'"
+    >
+      <img v-if="link.iconType === 'CUSTOM' && link.imageUrl" :src="link.imageUrl" :alt="link.label ?? ''" class="size-5 rounded-full object-cover">
+      <UIcon v-else :name="iconFor(link.iconKey)" class="size-5" />
+    </a>
   </div>
 </template>

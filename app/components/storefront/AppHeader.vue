@@ -43,8 +43,8 @@ async function logout() {
 
   <UHeader>
     <template #title>
-      <NuxtLink to="/" class="flex items-center gap-2 text-lg font-bold text-primary">
-        <img src="/images/logo/logo.png" alt="Cá Nhà Biển" class="size-8 object-contain">
+      <NuxtLink to="/" class="flex items-center gap-2.5 text-xl font-extrabold text-primary sm:text-2xl">
+        <img src="/images/logo/logo.png" alt="Cá Nhà Biển" class="size-11 object-contain sm:size-12">
         Cá Nhà Biển
       </NuxtLink>
     </template>
@@ -92,11 +92,14 @@ async function logout() {
       >
         <UButton
           to="/cart"
-          icon="i-lucide-shopping-cart"
           color="neutral"
           variant="ghost"
           aria-label="Giỏ hàng"
-        />
+          :ui="{ base: 'flex-col h-auto gap-0.5 px-2 py-1.5' }"
+        >
+          <UIcon name="i-lucide-shopping-cart" class="size-5" />
+          <span class="text-[10px] font-semibold leading-none">GIỎ HÀNG</span>
+        </UButton>
       </UChip>
 
       <UDropdownMenu
@@ -107,18 +110,27 @@ async function logout() {
           { label: 'Đăng xuất', icon: 'i-lucide-log-out', onSelect: logout },
         ]]"
       >
-        <UButton color="neutral" variant="ghost" icon="i-lucide-user-round" aria-label="Tài khoản">
-          <span class="hidden sm:inline">{{ user?.name }}</span>
+        <UButton
+          color="neutral"
+          variant="ghost"
+          aria-label="Tài khoản"
+          :ui="{ base: 'flex-col h-auto gap-0.5 px-2 py-1.5' }"
+        >
+          <UIcon name="i-lucide-user-round" class="size-5" />
+          <span class="text-[10px] font-semibold leading-none">TÀI KHOẢN</span>
         </UButton>
       </UDropdownMenu>
       <UButton
         v-else
         to="/login"
-        icon="i-lucide-user"
         color="neutral"
         variant="ghost"
         aria-label="Đăng nhập"
-      />
+        :ui="{ base: 'flex-col h-auto gap-0.5 px-2 py-1.5' }"
+      >
+        <UIcon name="i-lucide-user" class="size-5" />
+        <span class="text-[10px] font-semibold leading-none">TÀI KHOẢN</span>
+      </UButton>
     </template>
 
     <template #body>

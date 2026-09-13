@@ -12,6 +12,7 @@ const links = [
   { label: 'Đánh giá', icon: 'i-lucide-star', to: '/admin/reviews' },
   { label: 'Mã giảm giá', icon: 'i-lucide-ticket-percent', to: '/admin/coupons' },
   { label: 'Banner', icon: 'i-lucide-image', to: '/admin/banners' },
+  { label: 'Mạng xã hội', icon: 'i-lucide-share-2', to: '/admin/social-links' },
   { label: 'Bài viết', icon: 'i-lucide-newspaper', to: '/admin/posts' },
   { label: 'Liên hệ', icon: 'i-lucide-inbox', to: '/admin/contacts' },
   { label: 'Báo cáo', icon: 'i-lucide-bar-chart-3', to: '/admin/reports' },

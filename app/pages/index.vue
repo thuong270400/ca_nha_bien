@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import type { Category, Product } from '#shared/types/catalog'
+import type { CategoryHomeSection, Product } from '#shared/types/catalog'
 import type { Banner } from '#shared/types/content'
 
 interface HomeData {
-  bestSelling: Product[]
+  categorySections: CategoryHomeSection[]
   onSale: Product[]
-  categories: Category[]
   banners: Banner[]
 }
 
@@ -31,7 +30,7 @@ useCanonical('/')
         loop
         class="mx-auto max-w-7xl"
       >
-        <UContainer class="grid items-center gap-8 py-12 lg:grid-cols-2 lg:py-20">
+        <UContainer class="grid min-h-[90vh] items-center gap-8 py-12 lg:grid-cols-[1fr_1.4fr] lg:py-20">
           <div>
             <h1 v-if="item.title" class="text-3xl font-bold leading-tight text-highlighted sm:text-4xl lg:text-5xl">
               {{ item.title }}
@@ -45,11 +44,11 @@ useCanonical('/')
               </UButton>
             </div>
           </div>
-          <div class="relative">
+          <div class="relative flex aspect-[16/9] items-center justify-center overflow-hidden rounded-2xl">
             <img
               :src="item.imageUrl"
               :alt="item.title ?? 'Cá Nhà Biển'"
-              class="mx-auto w-full max-w-md rounded-2xl"
+              class="size-full object-contain object-center"
             >
           </div>
         </UContainer>
@@ -57,7 +56,7 @@ useCanonical('/')
     </section>
 
     <section v-else class="bg-gradient-to-br from-sky-50 to-white dark:from-ocean-950 dark:to-gray-950">
-      <UContainer class="grid items-center gap-8 py-12 lg:grid-cols-2 lg:py-20">
+      <UContainer class="grid min-h-[90vh] items-center gap-8 py-12 lg:grid-cols-[1fr_1.4fr] lg:py-20">
         <div>
           <UBadge color="primary" variant="subtle" class="mb-4">
             Đánh bắt trong ngày
@@ -77,54 +76,23 @@ useCanonical('/')
             </UButton>
           </div>
         </div>
-        <div class="relative">
+        <div class="relative flex aspect-[16/9] items-center justify-center overflow-hidden rounded-2xl">
           <img
             src="/images/placeholder-fish.svg"
             alt="Cá tươi Cá Nhà Biển"
-            class="mx-auto w-full max-w-md rounded-2xl"
+            class="size-full object-contain object-center"
           >
-        </div>
-      </UContainer>
-    </section>
-
-    <section class="py-8">
-      <UContainer>
-        <div class="mb-4 flex items-center justify-between">
-          <h2 class="text-xl font-bold text-highlighted">
-            Danh mục
-          </h2>
-          <UButton
-            to="/products"
-            color="neutral"
-            variant="link"
-            trailing-icon="i-lucide-arrow-right"
-          >
-            Xem tất cả danh mục
-          </UButton>
-        </div>
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <NuxtLink
-            v-for="category in data?.categories ?? []"
-            :key="category.id"
-            :to="`/products?category=${category.slug}`"
-            class="flex flex-col items-center gap-2 rounded-xl border border-default p-4 text-center transition hover:shadow-md"
-          >
-            <img
-              :src="category.imageUrl ?? '/images/placeholder-fish.svg'"
-              :alt="category.name"
-              class="size-16 rounded-full object-cover"
-            >
-            <span class="text-sm font-medium text-highlighted">{{ category.name }}</span>
-          </NuxtLink>
         </div>
       </UContainer>
     </section>
 
     <StorefrontProductSection
-      title="Bán chạy"
-      description="Được khách hàng lựa chọn nhiều nhất"
-      :products="data?.bestSelling ?? []"
-      view-all-to="/products?sort=best_selling"
+      v-for="section in data?.categorySections ?? []"
+      :key="section.id"
+      :title="section.name"
+      :description="section.description ?? undefined"
+      :products="section.products"
+      :view-all-to="section.hasMore ? `/categories/${section.slug}` : undefined"
     />
 
     <StorefrontProductSection

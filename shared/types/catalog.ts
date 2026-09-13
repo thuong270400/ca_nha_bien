@@ -6,7 +6,13 @@ export interface Category {
   imageUrl: string | null
   isActive: boolean
   isFeatured: boolean
+  homepageLimit: number | null
   position: number
+}
+
+export interface CategoryHomeSection extends Category {
+  products: Product[]
+  hasMore: boolean
 }
 
 export interface ProductVariant {
@@ -34,6 +40,8 @@ export interface Tag {
   id: string
   name: string
   slug: string
+  color: string
+  showOnImage: boolean
 }
 
 export interface Product {

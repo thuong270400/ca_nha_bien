@@ -126,16 +126,7 @@ export async function getRelatedProducts(productId: string, categoryIds: string[
   })
 }
 
-const activeProductWhere = { deletedAt: null, status: 'ACTIVE' } satisfies Prisma.ProductWhereInput
-
-export async function getBestSellingProducts(limit = 8) {
-  return prisma.product.findMany({
-    where: activeProductWhere,
-    include: productInclude,
-    take: limit,
-    orderBy: [{ soldCount: 'desc' }, { createdAt: 'desc' }],
-  })
-}
+export const activeProductWhere = { deletedAt: null, status: 'ACTIVE' } satisfies Prisma.ProductWhereInput
 
 export async function getOnSaleProducts(limit = 8) {
   return prisma.product.findMany({

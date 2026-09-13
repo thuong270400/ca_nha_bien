@@ -36,6 +36,8 @@ async function onToggleWishlist() {
   }
 }
 
+const imageTags = computed(() => product.value.tags.filter(t => t.showOnImage))
+const labelTags = computed(() => product.value.tags.filter(t => !t.showOnImage))
 const defaultVariant = computed(() => product.value.variants.find(v => v.isDefault) ?? product.value.variants[0])
 const coverImage = computed(() => product.value.images[0]?.url ?? '/images/placeholder-fish.svg')
 const hoverImage = computed(() => product.value.images[1]?.url ?? null)
@@ -68,13 +70,19 @@ const discountPercent = computed(() => {
         class="absolute inset-0 size-full object-cover opacity-0 transition-all duration-500 ease-out group-hover:-translate-y-4 group-hover:opacity-100"
         loading="lazy"
       >
-      <UBadge
-        v-if="discountPercent"
-        color="error"
-        class="absolute left-2 top-2"
-      >
-        -{{ discountPercent }}%
-      </UBadge>
+      <div v-if="imageTags.length || discountPercent" class="absolute left-2 top-2 flex flex-col items-start gap-1">
+        <span
+          v-for="tag in imageTags"
+          :key="tag.id"
+          class="rounded px-2 py-0.5 text-[11px] font-semibold"
+          :style="{ backgroundColor: tag.color, color: tagTextColor(tag.color) }"
+        >
+          {{ tag.name }}
+        </span>
+        <UBadge v-if="discountPercent" color="error">
+          -{{ discountPercent }}%
+        </UBadge>
+      </div>
       <UBadge
         v-if="totalStock === 0"
         color="neutral"
@@ -114,6 +122,16 @@ const discountPercent = computed(() => {
       <h3 class="line-clamp-2 text-sm font-medium text-highlighted">
         {{ product.name }}
       </h3>
+      <div v-if="labelTags.length" class="flex flex-wrap gap-1">
+        <span
+          v-for="tag in labelTags"
+          :key="tag.id"
+          class="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium"
+          :style="{ backgroundColor: tag.color, color: tagTextColor(tag.color) }"
+        >
+          {{ tag.name }}
+        </span>
+      </div>
       <div class="mt-auto flex items-end justify-between gap-2 pt-2">
         <div class="min-w-0 flex-1">
           <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">

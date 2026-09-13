@@ -40,8 +40,11 @@ async function toggleHidden(review: AdminReviewView) {
   }
 }
 
+const confirm = useConfirm()
 const deletingId = ref<string | null>(null)
 async function deleteReview(review: AdminReviewView) {
+  const ok = await confirm({ title: 'Xoá đánh giá này?' })
+  if (!ok) return
   deletingId.value = review.id
   try {
     await $fetch(`/api/admin/reviews/${review.id}`, { method: 'DELETE' })

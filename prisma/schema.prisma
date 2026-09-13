@@ -113,16 +113,19 @@ model Address {
 // ---------------------------------------------------------------------------
 
 model Category {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  imageUrl    String?
-  isActive    Boolean  @default(true)
-  isFeatured  Boolean  @default(false)
-  position    Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  description   String?
+  imageUrl      String?
+  isActive      Boolean  @default(true)
+  isFeatured    Boolean  @default(false)
+  /// Số sản phẩm tối đa hiển thị ở landing page cho danh mục này trước khi ẩn
+  /// và hiện nút "Xem tất cả" — null nghĩa là hiển thị toàn bộ sản phẩm.
+  homepageLimit Int?
+  position      Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   products Product[]
 
@@ -213,10 +216,12 @@ model ProductVariant {
 /// Quick-filter chip gắn cho sản phẩm (vd "Cá fillet", "Làm sẵn nướng BBQ") —
 /// admin tự tạo và gắn tag, không có dữ liệu mặc định.
 model Tag {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  color       String   @default("#6B7280")
+  showOnImage Boolean  @default(false)
+  createdAt   DateTime @default(now())
 
   products Product[]
 
@@ -465,6 +470,36 @@ model Banner {
 
   @@index([isActive])
   @@map("banners")
+}
+
+enum SocialLinkIconType {
+  PRESET
+  CUSTOM
+}
+
+enum SocialLinkDisplay {
+  FOOTER
+  FIXED
+}
+
+model SocialLink {
+  id              String             @id @default(cuid())
+  label           String?
+  url             String
+  iconType        SocialLinkIconType @default(PRESET)
+  /// Preset key (e.g. "facebook", "zalo") looked up against SOCIAL_ICON_PRESETS when iconType = PRESET
+  iconKey         String?
+  /// Uploaded image URL (via /uploads/social-links/...) when iconType = CUSTOM
+  imageUrl        String?
+  /// FOOTER: shown in the storefront footer row (default). FIXED: shown as a floating button on the right edge of every page.
+  displayLocation SocialLinkDisplay  @default(FOOTER)
+  position        Int                @default(0)
+  isActive        Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([isActive])
+  @@map("social_links")
 }
 
 model ContactMessage {

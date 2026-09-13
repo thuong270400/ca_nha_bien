@@ -10,17 +10,29 @@ const open = ref(false)
 const saving = ref(false)
 const editing = ref<Tag | null>(null)
 
-const form = reactive({ name: '', slug: '' })
+const form = reactive({ name: '', slug: '', color: TAG_COLOR_PRESETS[0]!, showOnImage: false })
+const positionOptions = [
+  { label: 'Đè lên ảnh sản phẩm', value: true },
+  { label: 'Nhãn dưới tên sản phẩm (mặc định)', value: false },
+]
 const slugTouched = ref(false)
+const colorError = ref('')
+const hexPattern = /^#[0-9A-Fa-f]{6}$/
 
 watch(() => form.name, (name) => {
   if (!slugTouched.value) form.slug = slugify(name)
+})
+
+watch(() => form.color, (color) => {
+  colorError.value = hexPattern.test(color) ? '' : 'Mã màu không hợp lệ (dạng #RRGGBB)'
 })
 
 function openCreate() {
   editing.value = null
   form.name = ''
   form.slug = ''
+  form.color = TAG_COLOR_PRESETS[0]!
+  form.showOnImage = false
   slugTouched.value = false
   open.value = true
 }
@@ -29,14 +41,17 @@ function openEdit(tag: Tag) {
   editing.value = tag
   form.name = tag.name
   form.slug = tag.slug
+  form.color = tag.color
+  form.showOnImage = tag.showOnImage
   slugTouched.value = true
   open.value = true
 }
 
 async function save() {
+  if (!hexPattern.test(form.color)) return
   saving.value = true
   try {
-    const payload = { name: form.name, slug: form.slug }
+    const payload = { name: form.name, slug: form.slug, color: form.color, showOnImage: form.showOnImage }
     if (editing.value) {
       await $fetch(`/api/tags/${editing.value.id}`, { method: 'PATCH', body: payload })
     } else {
@@ -53,8 +68,11 @@ async function save() {
   }
 }
 
+const confirm = useConfirm()
 const deletingId = ref<string | null>(null)
 async function remove(tag: Tag) {
+  const ok = await confirm({ title: `Xoá tag "${tag.name}"?` })
+  if (!ok) return
   deletingId.value = tag.id
   try {
     await $fetch(`/api/tags/${tag.id}`, { method: 'DELETE' })
@@ -92,6 +110,12 @@ useSeoMeta({ title: 'Tag - Cá Nhà Biển Admin' })
             <th class="px-4 py-3">
               Slug
             </th>
+            <th class="px-4 py-3">
+              Màu
+            </th>
+            <th class="px-4 py-3">
+              Vị trí
+            </th>
             <th class="px-4 py-3" />
           </tr>
         </thead>
@@ -102,6 +126,18 @@ useSeoMeta({ title: 'Tag - Cá Nhà Biển Admin' })
             </td>
             <td class="px-4 py-3 text-muted">
               {{ tag.slug }}
+            </td>
+            <td class="px-4 py-3">
+              <span
+                class="inline-flex items-center gap-2 rounded px-2.5 py-1 text-xs font-medium"
+                :style="{ backgroundColor: tag.color, color: tagTextColor(tag.color) }"
+              >
+                <span class="size-2 rounded-full" :style="{ backgroundColor: tagTextColor(tag.color) }" />
+                {{ tag.color }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-muted">
+              {{ tag.showOnImage ? 'Đè lên ảnh' : 'Dưới tên SP' }}
             </td>
             <td class="px-4 py-3 text-right">
               <div class="flex justify-end gap-2">
@@ -118,7 +154,7 @@ useSeoMeta({ title: 'Tag - Cá Nhà Biển Admin' })
             </td>
           </tr>
           <tr v-if="!tags?.length">
-            <td colspan="3" class="px-4 py-10 text-center text-muted">
+            <td colspan="5" class="px-4 py-10 text-center text-muted">
               Chưa có tag nào
             </td>
           </tr>
@@ -135,6 +171,39 @@ useSeoMeta({ title: 'Tag - Cá Nhà Biển Admin' })
           <UFormField label="Slug" required>
             <UInput v-model="form.slug" class="w-full" @input="slugTouched = true" />
           </UFormField>
+          <UFormField label="Màu tag" :error="colorError">
+            <div class="space-y-3">
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="preset in TAG_COLOR_PRESETS"
+                  :key="preset"
+                  type="button"
+                  class="size-7 rounded-full border-2 transition"
+                  :class="form.color.toLowerCase() === preset.toLowerCase() ? 'border-highlighted' : 'border-transparent'"
+                  :style="{ backgroundColor: preset }"
+                  :aria-label="preset"
+                  @click="form.color = preset"
+                />
+              </div>
+              <div class="flex items-center gap-2">
+                <input
+                  v-model="form.color"
+                  type="color"
+                  class="size-9 shrink-0 cursor-pointer rounded border border-default bg-transparent p-0.5"
+                >
+                <UInput v-model="form.color" placeholder="#6B7280" class="w-full font-mono" />
+              </div>
+              <span
+                class="inline-flex items-center rounded px-3 py-1 text-xs font-medium"
+                :style="{ backgroundColor: hexPattern.test(form.color) ? form.color : '#6B7280', color: tagTextColor(hexPattern.test(form.color) ? form.color : '#6B7280') }"
+              >
+                {{ form.name || 'Xem trước tag' }}
+              </span>
+            </div>
+          </UFormField>
+          <UFormField label="Vị trí hiển thị">
+            <URadioGroup v-model="form.showOnImage" :items="positionOptions" />
+          </UFormField>
         </div>
       </template>
       <template #footer>
@@ -142,7 +211,7 @@ useSeoMeta({ title: 'Tag - Cá Nhà Biển Admin' })
           <UButton color="neutral" variant="outline" @click="open = false">
             Huỷ
           </UButton>
-          <UButton :loading="saving" @click="save">
+          <UButton :loading="saving" :disabled="!!colorError" @click="save">
             Lưu
           </UButton>
         </div>
