@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SocialLink } from '#shared/types/content'
-import { SOCIAL_ICON_PRESETS } from '#shared/types/content'
+import { SOCIAL_ICON_PRESETS, SOCIAL_ICON_SIZES } from '#shared/types/content'
 
 const year = new Date().getFullYear()
 const { contact } = useAppConfig()
@@ -10,6 +10,10 @@ const footerLinks = computed(() => socialLinks.value?.filter(link => link.displa
 
 function iconFor(key: string | null) {
   return SOCIAL_ICON_PRESETS.find(preset => preset.key === key)?.icon ?? 'i-lucide-link'
+}
+
+function sizeOf(size: string) {
+  return SOCIAL_ICON_SIZES.find(s => s.key === size) ?? SOCIAL_ICON_SIZES[1]
 }
 </script>
 
@@ -24,11 +28,12 @@ function iconFor(key: string | null) {
             :href="link.url"
             target="_blank"
             rel="noopener noreferrer"
-            class="flex size-10 items-center justify-center overflow-hidden rounded-full bg-elevated text-muted transition hover:bg-primary hover:text-inverted"
+            class="flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-elevated text-muted transition hover:bg-primary hover:text-inverted"
+            :style="{ width: `${sizeOf(link.size).box}px`, height: `${sizeOf(link.size).box}px` }"
             :aria-label="link.label || 'Liên kết mạng xã hội'"
           >
             <img v-if="link.iconType === 'CUSTOM' && link.imageUrl" :src="link.imageUrl" :alt="link.label ?? ''" class="size-full object-cover">
-            <UIcon v-else :name="iconFor(link.iconKey)" class="size-5" />
+            <UIcon v-else :name="iconFor(link.iconKey)" :style="{ width: `${sizeOf(link.size).icon}px`, height: `${sizeOf(link.size).icon}px` }" />
           </a>
         </div>
 

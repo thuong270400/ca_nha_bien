@@ -7,6 +7,7 @@ const socialLinkBaseSchema = z.object({
   iconKey: z.string().trim().max(60).nullable().optional(),
   imageUrl: z.string().trim().max(1000).nullable().optional(),
   displayLocation: z.enum(['FOOTER', 'FIXED']).default('FOOTER'),
+  size: z.enum(['SMALL', 'MEDIUM', 'LARGE', 'XLARGE', 'XXLARGE']).default('MEDIUM'),
   position: z.number().int().optional(),
   isActive: z.boolean().optional(),
 })

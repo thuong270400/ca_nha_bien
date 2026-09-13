@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { CategoryHomeSection, Product } from '#shared/types/catalog'
+import type { CategoryHomeSection } from '#shared/types/catalog'
 import type { Banner } from '#shared/types/content'
 
 interface HomeData {
   categorySections: CategoryHomeSection[]
-  onSale: Product[]
   banners: Banner[]
 }
 
@@ -93,13 +92,6 @@ useCanonical('/')
       :description="section.description ?? undefined"
       :products="section.products"
       :view-all-to="section.hasMore ? `/categories/${section.slug}` : undefined"
-    />
-
-    <StorefrontProductSection
-      title="Đang giảm giá"
-      description="Ưu đãi có thời hạn"
-      :products="data?.onSale ?? []"
-      view-all-to="/products"
     />
 
     <section class="bg-elevated py-12">

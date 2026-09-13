@@ -482,6 +482,14 @@ enum SocialLinkDisplay {
   FIXED
 }
 
+enum SocialLinkSize {
+  SMALL
+  MEDIUM
+  LARGE
+  XLARGE
+  XXLARGE
+}
+
 model SocialLink {
   id              String             @id @default(cuid())
   label           String?
@@ -493,6 +501,8 @@ model SocialLink {
   imageUrl        String?
   /// FOOTER: shown in the storefront footer row (default). FIXED: shown as a floating button on the right edge of every page.
   displayLocation SocialLinkDisplay  @default(FOOTER)
+  /// Rendered icon size, looked up against SOCIAL_ICON_SIZES for the actual pixel classes.
+  size            SocialLinkSize     @default(MEDIUM)
   position        Int                @default(0)
   isActive        Boolean            @default(true)
   createdAt       DateTime           @default(now())

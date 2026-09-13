@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SocialLink } from '#shared/types/content'
-import { SOCIAL_ICON_PRESETS } from '#shared/types/content'
+import { SOCIAL_ICON_PRESETS, SOCIAL_ICON_SIZES } from '#shared/types/content'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -26,6 +26,8 @@ function displayLocationLabel(value: 'FOOTER' | 'FIXED') {
   return value === 'FIXED' ? 'Cố định' : 'Footer'
 }
 
+const sizeOptions = SOCIAL_ICON_SIZES.map(size => ({ label: size.label, value: size.key }))
+
 const form = reactive({
   label: '',
   url: '',
@@ -33,12 +35,17 @@ const form = reactive({
   iconKey: SOCIAL_ICON_PRESETS[0].key as string,
   imageUrl: '',
   displayLocation: 'FOOTER' as 'FOOTER' | 'FIXED',
+  size: 'MEDIUM' as 'SMALL' | 'MEDIUM' | 'LARGE' | 'XLARGE' | 'XXLARGE',
   position: 0,
   isActive: true,
 })
 
 function iconFor(key: string | null | undefined) {
   return SOCIAL_ICON_PRESETS.find(preset => preset.key === key)?.icon ?? 'i-lucide-link'
+}
+
+function sizeOf(size: string) {
+  return SOCIAL_ICON_SIZES.find(s => s.key === size) ?? SOCIAL_ICON_SIZES[1]
 }
 
 function openCreate() {
@@ -49,6 +56,7 @@ function openCreate() {
   form.iconKey = SOCIAL_ICON_PRESETS[0].key
   form.imageUrl = ''
   form.displayLocation = 'FOOTER'
+  form.size = 'MEDIUM'
   form.position = 0
   form.isActive = true
   open.value = true
@@ -62,6 +70,7 @@ function openEdit(link: SocialLink) {
   form.iconKey = link.iconKey ?? SOCIAL_ICON_PRESETS[0].key
   form.imageUrl = link.imageUrl ?? ''
   form.displayLocation = link.displayLocation
+  form.size = link.size
   form.position = link.position
   form.isActive = link.isActive
   open.value = true
@@ -100,6 +109,7 @@ async function save() {
       iconKey: form.iconType === 'PRESET' ? form.iconKey : null,
       imageUrl: form.iconType === 'CUSTOM' ? form.imageUrl : null,
       displayLocation: form.displayLocation,
+      size: form.size,
       position: form.position,
       isActive: form.isActive,
     }
@@ -159,6 +169,7 @@ useSeoMeta({ title: 'Mạng xã hội - Cá Nhà Biển Admin' })
             <th class="px-4 py-3">Tên</th>
             <th class="px-4 py-3">Liên kết</th>
             <th class="px-4 py-3">Vị trí</th>
+            <th class="px-4 py-3">Cỡ</th>
             <th class="px-4 py-3">Thứ tự</th>
             <th class="px-4 py-3">Trạng thái</th>
             <th class="px-4 py-3" />
@@ -184,6 +195,9 @@ useSeoMeta({ title: 'Mạng xã hội - Cá Nhà Biển Admin' })
               </UBadge>
             </td>
             <td class="px-4 py-3 text-muted">
+              {{ sizeOf(link.size).label }}
+            </td>
+            <td class="px-4 py-3 text-muted">
               {{ link.position }}
             </td>
             <td class="px-4 py-3">
@@ -206,7 +220,7 @@ useSeoMeta({ title: 'Mạng xã hội - Cá Nhà Biển Admin' })
             </td>
           </tr>
           <tr v-if="!links?.length">
-            <td colspan="7" class="px-4 py-10 text-center text-muted">
+            <td colspan="8" class="px-4 py-10 text-center text-muted">
               Chưa có liên kết nào
             </td>
           </tr>
@@ -256,6 +270,18 @@ useSeoMeta({ title: 'Mạng xã hội - Cá Nhà Biển Admin' })
 
           <UFormField label="Vị trí hiển thị">
             <URadioGroup v-model="form.displayLocation" :items="displayLocationOptions" />
+          </UFormField>
+          <UFormField label="Kích thước icon">
+            <div class="flex items-center gap-4">
+              <URadioGroup v-model="form.size" :items="sizeOptions" orientation="horizontal" />
+              <div
+                class="flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-inverted text-inverted"
+                :style="{ width: `${sizeOf(form.size).box}px`, height: `${sizeOf(form.size).box}px` }"
+              >
+                <img v-if="form.iconType === 'CUSTOM' && form.imageUrl" :src="form.imageUrl" alt="" class="size-full object-cover">
+                <UIcon v-else :name="iconFor(form.iconKey)" :style="{ width: `${sizeOf(form.size).icon}px`, height: `${sizeOf(form.size).icon}px` }" />
+              </div>
+            </div>
           </UFormField>
           <UFormField label="Thứ tự hiển thị">
             <UInputNumber v-model="form.position" :min="0" />

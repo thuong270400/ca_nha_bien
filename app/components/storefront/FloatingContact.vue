@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import type { SocialLink } from '#shared/types/content'
-import { SOCIAL_ICON_PRESETS } from '#shared/types/content'
+import { SOCIAL_ICON_PRESETS, SOCIAL_ICON_SIZES } from '#shared/types/content'
 
 const { data: socialLinks } = await useFetch<SocialLink[]>('/api/social-links', { key: 'social-links' })
 const fixedLinks = computed(() => socialLinks.value?.filter(link => link.displayLocation === 'FIXED') ?? [])
 
 function iconFor(key: string | null) {
   return SOCIAL_ICON_PRESETS.find(preset => preset.key === key)?.icon ?? 'i-lucide-link'
+}
+
+function sizeOf(size: string) {
+  return SOCIAL_ICON_SIZES.find(s => s.key === size) ?? SOCIAL_ICON_SIZES[1]
 }
 
 const { y } = useWindowScroll()
@@ -43,11 +47,12 @@ function scrollToTop() {
       :href="link.url"
       target="_blank"
       rel="noopener noreferrer"
-      class="inline-flex items-center justify-center rounded-full bg-inverted p-2 text-inverted shadow-lg transition-colors hover:bg-inverted/90"
+      class="flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-inverted text-inverted shadow-lg transition-colors hover:bg-inverted/90"
+      :style="{ width: `${sizeOf(link.size).box}px`, height: `${sizeOf(link.size).box}px` }"
       :aria-label="link.label || 'Liên kết mạng xã hội'"
     >
-      <img v-if="link.iconType === 'CUSTOM' && link.imageUrl" :src="link.imageUrl" :alt="link.label ?? ''" class="size-5 rounded-full object-cover">
-      <UIcon v-else :name="iconFor(link.iconKey)" class="size-5" />
+      <img v-if="link.iconType === 'CUSTOM' && link.imageUrl" :src="link.imageUrl" :alt="link.label ?? ''" class="size-full object-cover">
+      <UIcon v-else :name="iconFor(link.iconKey)" :style="{ width: `${sizeOf(link.size).icon}px`, height: `${sizeOf(link.size).icon}px` }" />
     </a>
   </div>
 </template>

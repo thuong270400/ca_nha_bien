@@ -128,15 +128,6 @@ export async function getRelatedProducts(productId: string, categoryIds: string[
 
 export const activeProductWhere = { deletedAt: null, status: 'ACTIVE' } satisfies Prisma.ProductWhereInput
 
-export async function getOnSaleProducts(limit = 8) {
-  return prisma.product.findMany({
-    where: { ...activeProductWhere, compareAtPrice: { not: null } },
-    include: productInclude,
-    take: limit,
-    orderBy: { updatedAt: 'desc' },
-  })
-}
-
 export async function getFeaturedProducts(limit = 8) {
   return prisma.product.findMany({
     where: { ...activeProductWhere, isFeatured: true },
