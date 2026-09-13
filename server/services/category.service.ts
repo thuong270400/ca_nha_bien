@@ -1,7 +1,7 @@
 import { Errors } from '../utils/errors'
 import { prisma } from '../utils/prisma'
 import type { CategoryCreateInput, CategoryUpdateInput } from '../utils/schemas/category.schema'
-import { activeProductWhere, productInclude } from './product.service'
+import { activeProductWhere, productInclude, resolveProductOrderBy } from './product.service'
 
 export async function listCategories(activeOnly?: boolean) {
   return prisma.category.findMany({
@@ -30,7 +30,7 @@ export async function getHomepageCategorySections() {
         where,
         include: productInclude,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: resolveProductOrderBy(category.defaultSort),
       }),
       limit !== undefined ? prisma.product.count({ where }) : Promise.resolve(0),
     ])

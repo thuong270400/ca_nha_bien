@@ -76,7 +76,10 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
       if (result.count === 0) {
         throw Errors.badRequest(`Sản phẩm "${item.product.name}" không đủ tồn kho`)
       }
-      await tx.product.update({ where: { id: item.productId }, data: { soldCount: { increment: item.quantity } } })
+      await tx.product.update({
+        where: { id: item.productId },
+        data: { soldCount: { increment: item.quantity }, stock: { decrement: item.quantity } },
+      })
     }
 
     let discountAmount = 0

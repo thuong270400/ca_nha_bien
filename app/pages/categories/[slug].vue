@@ -15,10 +15,13 @@ if (!category.value) {
 
 const sortOptions = [
   { label: 'Mới nhất', value: 'newest' },
+  { label: 'Cũ nhất', value: 'oldest' },
   { label: 'Bán chạy', value: 'best_selling' },
   { label: 'Giá tăng dần', value: 'price_asc' },
   { label: 'Giá giảm dần', value: 'price_desc' },
   { label: 'Tên A-Z', value: 'name_asc' },
+  { label: 'Tồn kho nhiều nhất', value: 'stock_desc' },
+  { label: 'Tồn kho ít nhất', value: 'stock_asc' },
 ]
 
 const listQuery = computed(() => ({
@@ -28,7 +31,7 @@ const listQuery = computed(() => ({
   minPrice: (route.query.minPrice as string) || undefined,
   maxPrice: (route.query.maxPrice as string) || undefined,
   inStock: (route.query.inStock as string) || undefined,
-  sort: (route.query.sort as string) || 'newest',
+  sort: (route.query.sort as string) || category.value?.defaultSort || 'newest',
   page: route.query.page ? Number(route.query.page) : 1,
   limit: 12,
 }))

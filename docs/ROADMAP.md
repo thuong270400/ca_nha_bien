@@ -34,7 +34,9 @@ Site tham khảo "Fish and More VN" filter theo: Thương hiệu, Trọng lượ
 
 ## Không cần làm lại — đã có sẵn
 
-Wishlist, đánh giá/rating sản phẩm (có kiểm duyệt), hệ thống coupon/giảm giá, mục sản phẩm liên quan, các carousel trang chủ (bán chạy/mới/khuyến mãi), trang FAQ, trang chính sách vận chuyển/đổi trả.
+Wishlist, đánh giá/rating sản phẩm (có kiểm duyệt), hệ thống coupon/giảm giá, mục sản phẩm liên quan, các carousel trang chủ (bán chạy/mới/khuyến mãi), trang FAQ, trang chính sách vận chuyển.
+
+- [x] ~~Chính sách đổi trả~~ — đã gỡ bỏ theo yêu cầu ngày 2026-09-13 (link footer, mục `#doi-tra` trên `/policy`, câu hỏi liên quan trên `/faq`). Hàng tươi sống nên không áp dụng đổi trả; đừng thêm lại trừ khi có yêu cầu mới.
 
 ## Bảng màu thương hiệu — ✅ Đã wire vào theme (2026-09-06)
 

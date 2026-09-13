@@ -10,6 +10,16 @@ const open = ref(false)
 const saving = ref(false)
 const editing = ref<Category | null>(null)
 
+const sortOptions = [
+  { label: 'Mới nhất', value: 'newest' },
+  { label: 'Cũ nhất', value: 'oldest' },
+  { label: 'Giá tăng dần', value: 'price_asc' },
+  { label: 'Giá giảm dần', value: 'price_desc' },
+  { label: 'Tên A-Z', value: 'name_asc' },
+  { label: 'Tồn kho nhiều nhất', value: 'stock_desc' },
+  { label: 'Tồn kho ít nhất', value: 'stock_asc' },
+]
+
 const form = reactive({
   name: '',
   slug: '',
@@ -20,6 +30,7 @@ const form = reactive({
   limitProducts: false,
   homepageLimit: 8,
   position: 0,
+  defaultSort: 'newest',
 })
 const slugTouched = ref(false)
 
@@ -38,6 +49,7 @@ function openCreate() {
   form.limitProducts = false
   form.homepageLimit = 8
   form.position = Math.max(0, ...(categories.value ?? []).map((c: Category) => c.position)) + 1
+  form.defaultSort = 'newest'
   slugTouched.value = false
   open.value = true
 }
@@ -53,6 +65,7 @@ function openEdit(category: Category) {
   form.limitProducts = category.homepageLimit !== null
   form.homepageLimit = category.homepageLimit ?? 8
   form.position = category.position
+  form.defaultSort = category.defaultSort
   slugTouched.value = true
   open.value = true
 }
@@ -69,6 +82,7 @@ async function save() {
       isFeatured: form.isFeatured,
       homepageLimit: form.limitProducts ? form.homepageLimit : null,
       position: form.position,
+      defaultSort: form.defaultSort,
     }
     if (editing.value) {
       await $fetch(`/api/categories/${editing.value.id}`, { method: 'PATCH', body: payload })
@@ -162,6 +176,9 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
             <th class="px-4 py-3">
               Trang chủ
             </th>
+            <th class="px-4 py-3">
+              Sắp xếp
+            </th>
             <th class="px-4 py-3" />
           </tr>
         </thead>
@@ -211,6 +228,9 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
                 </span>
               </div>
             </td>
+            <td class="px-4 py-3 text-muted">
+              {{ sortOptions.find(o => o.value === category.defaultSort)?.label ?? category.defaultSort }}
+            </td>
             <td class="px-4 py-3 text-right">
               <div class="flex justify-end gap-2">
                 <UButton icon="i-lucide-pencil" size="sm" variant="ghost" @click="openEdit(category)" />
@@ -226,7 +246,7 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
             </td>
           </tr>
           <tr v-if="!categories?.length">
-            <td colspan="6" class="px-4 py-10 text-center text-muted">
+            <td colspan="7" class="px-4 py-10 text-center text-muted">
               Chưa có danh mục nào
             </td>
           </tr>
@@ -251,6 +271,9 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
           </UFormField>
           <UFormField label="Thứ tự hiển thị" description="Số nhỏ hơn hiển thị trước, trên trang chủ và danh sách danh mục">
             <UInputNumber v-model="form.position" :min="0" />
+          </UFormField>
+          <UFormField label="Sắp xếp sản phẩm" description="Thứ tự mặc định khi hiển thị sản phẩm của danh mục này ở trang chủ và trang danh mục">
+            <USelect v-model="form.defaultSort" :items="sortOptions" class="w-full" />
           </UFormField>
           <UCheckbox v-model="form.isActive" label="Hiển thị trên cửa hàng" />
           <UCheckbox

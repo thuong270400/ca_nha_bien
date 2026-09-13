@@ -38,9 +38,16 @@ useCanonical('/')
             <p v-if="item.subtitle" class="mt-4 max-w-md text-muted">
               {{ item.subtitle }}
             </p>
-            <div v-if="item.ctaLabel && item.ctaLink" class="mt-6 flex gap-3">
-              <UButton :to="item.ctaLink" size="lg" trailing-icon="i-lucide-arrow-right">
-                {{ item.ctaLabel }}
+            <div v-if="item.buttons.length" class="mt-6 flex flex-wrap gap-3">
+              <UButton
+                v-for="(btn, idx) in item.buttons"
+                :key="btn.id"
+                :to="btn.link"
+                size="lg"
+                :variant="idx === 0 ? 'solid' : 'outline'"
+                :trailing-icon="idx === 0 ? 'i-lucide-arrow-right' : undefined"
+              >
+                {{ btn.label }}
               </UButton>
             </div>
           </div>

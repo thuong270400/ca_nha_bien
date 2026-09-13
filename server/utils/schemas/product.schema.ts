@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import { boolQuery, paginationSchema, slugSchema } from './common.schema'
 
+/** Shared with `Category.defaultSort` (see category.schema.ts) — same vocabulary powers both. */
+export const productSortSchema = z.enum(['newest', 'oldest', 'price_asc', 'price_desc', 'name_asc', 'stock_asc', 'stock_desc', 'best_selling'])
+
 export const productVariantSchema = z.object({
   id: z.string().optional(),
   unit: z.string().trim().min(1, 'Đơn vị bán không được để trống').max(40),
@@ -52,7 +55,7 @@ export const productListQuerySchema = paginationSchema.extend({
   inStock: boolQuery.optional(),
   status: productStatusSchema.optional(),
   featured: boolQuery.optional(),
-  sort: z.enum(['newest', 'price_asc', 'price_desc', 'name_asc', 'best_selling']).default('newest'),
+  sort: productSortSchema.default('newest'),
 })
 
 export const productSuggestQuerySchema = z.object({

@@ -4,6 +4,20 @@ import { prisma } from '../utils/prisma'
 import type { ProductCreateInput, ProductListQuery, ProductUpdateInput } from '../utils/schemas/product.schema'
 import { deleteImage } from './upload.service'
 
+/** Maps a `productSortSchema` value (also `Category.defaultSort`) to a Prisma orderBy. */
+export function resolveProductOrderBy(sort: string): Prisma.ProductOrderByWithRelationInput {
+  switch (sort) {
+    case 'price_asc': return { price: 'asc' }
+    case 'price_desc': return { price: 'desc' }
+    case 'name_asc': return { name: 'asc' }
+    case 'stock_asc': return { stock: 'asc' }
+    case 'stock_desc': return { stock: 'desc' }
+    case 'best_selling': return { soldCount: 'desc' }
+    case 'oldest': return { createdAt: 'asc' }
+    default: return { createdAt: 'desc' }
+  }
+}
+
 export const productInclude = {
   categories: true,
   images: { orderBy: { position: 'asc' as const } },
@@ -65,16 +79,7 @@ export async function listProducts(query: ProductListQuery, opts: { includeInact
     if (tagSlugs.length) where.tags = { some: { slug: { in: tagSlugs } } }
   }
 
-  const orderBy: Prisma.ProductOrderByWithRelationInput
-    = query.sort === 'price_asc'
-      ? { price: 'asc' }
-      : query.sort === 'price_desc'
-        ? { price: 'desc' }
-        : query.sort === 'name_asc'
-          ? { name: 'asc' }
-          : query.sort === 'best_selling'
-            ? { soldCount: 'desc' }
-            : { createdAt: 'desc' }
+  const orderBy = resolveProductOrderBy(query.sort)
 
   const [data, total] = await Promise.all([
     prisma.product.findMany({
@@ -185,6 +190,7 @@ export async function createProduct(input: ProductCreateInput) {
         categories: { connect: input.categoryIds.map(id => ({ id })) },
         price: defaultVariant.price,
         compareAtPrice: defaultVariant.compareAtPrice,
+        stock: input.variants.reduce((sum, v) => sum + v.stock, 0),
         images: input.images?.length
           ? { create: input.images.map((img, idx) => ({ url: img.url, alt: img.alt, position: img.position ?? idx })) }
           : undefined,
@@ -235,6 +241,7 @@ export async function updateProduct(id: string, input: ProductUpdateInput) {
         categories: input.categoryIds ? { set: input.categoryIds.map(id => ({ id })) } : undefined,
         price: defaultVariant.price,
         compareAtPrice: defaultVariant.compareAtPrice,
+        stock: variants.reduce((sum, v) => sum + v.stock, 0),
         tags: input.tagIds ? { set: input.tagIds.map(tagId => ({ id: tagId })) } : undefined,
       },
       include: productInclude,

@@ -1,3 +1,5 @@
+export type CategoryDefaultSort = 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'name_asc' | 'stock_asc' | 'stock_desc'
+
 export interface Category {
   id: string
   name: string
@@ -8,6 +10,7 @@ export interface Category {
   isFeatured: boolean
   homepageLimit: number | null
   position: number
+  defaultSort: CategoryDefaultSort
 }
 
 export interface CategoryHomeSection extends Category {
@@ -55,6 +58,7 @@ export interface Product {
   isFeatured: boolean
   price: string | null
   compareAtPrice: string | null
+  stock: number
   soldCount: number
   avgRating: number
   reviewCount: number

@@ -11,23 +11,40 @@ const saving = ref(false)
 const uploading = ref(false)
 const editing = ref<Banner | null>(null)
 
+const linkTypeOptions = [
+  { label: 'Trang trong web', value: 'internal' as const },
+  { label: 'Trang ngoài', value: 'external' as const },
+]
+
+function detectLinkType(link: string | null | undefined): 'internal' | 'external' {
+  return link && /^https?:\/\//i.test(link) ? 'external' : 'internal'
+}
+
+interface ButtonForm {
+  label: string
+  link: string
+  linkType: 'internal' | 'external'
+}
+
 const form = reactive({
   imageUrl: '',
   title: '',
   subtitle: '',
-  ctaLabel: '',
-  ctaLink: '',
+  buttons: [] as ButtonForm[],
   position: 0,
   isActive: true,
 })
+
+function addButton() {
+  form.buttons.push({ label: '', link: '', linkType: 'internal' })
+}
 
 function openCreate() {
   editing.value = null
   form.imageUrl = ''
   form.title = ''
   form.subtitle = ''
-  form.ctaLabel = ''
-  form.ctaLink = ''
+  form.buttons = []
   form.position = 0
   form.isActive = true
   open.value = true
@@ -38,8 +55,7 @@ function openEdit(banner: Banner) {
   form.imageUrl = banner.imageUrl
   form.title = banner.title ?? ''
   form.subtitle = banner.subtitle ?? ''
-  form.ctaLabel = banner.ctaLabel ?? ''
-  form.ctaLink = banner.ctaLink ?? ''
+  form.buttons = banner.buttons.map(b => ({ label: b.label, link: b.link, linkType: detectLinkType(b.link) }))
   form.position = banner.position
   form.isActive = banner.isActive
   open.value = true
@@ -71,14 +87,31 @@ async function onFileSelected(e: Event) {
 }
 
 async function save() {
+  const buttons = []
+  for (const btn of form.buttons) {
+    const label = btn.label.trim()
+    const link = btn.link.trim()
+    if (!label || !link) {
+      toast.add({ title: 'Lỗi', description: 'Vui lòng nhập đầy đủ nhãn và liên kết cho mỗi nút', color: 'error' })
+      return
+    }
+    if (btn.linkType === 'internal' && !link.startsWith('/')) {
+      toast.add({ title: 'Lỗi', description: 'Đường dẫn trong web phải bắt đầu bằng /, ví dụ /products', color: 'error' })
+      return
+    }
+    if (btn.linkType === 'external' && !/^https?:\/\//i.test(link)) {
+      toast.add({ title: 'Lỗi', description: 'Liên kết trang ngoài phải bắt đầu bằng http:// hoặc https://', color: 'error' })
+      return
+    }
+    buttons.push({ label, link })
+  }
   saving.value = true
   try {
     const payload = {
       imageUrl: form.imageUrl,
       title: form.title || undefined,
       subtitle: form.subtitle || undefined,
-      ctaLabel: form.ctaLabel || undefined,
-      ctaLink: form.ctaLink || undefined,
+      buttons,
       position: form.position,
       isActive: form.isActive,
     }
@@ -136,6 +169,7 @@ useSeoMeta({ title: 'Banner - Cá Nhà Biển Admin' })
           <tr>
             <th class="px-4 py-3">Ảnh</th>
             <th class="px-4 py-3">Tiêu đề</th>
+            <th class="px-4 py-3">Nút bấm</th>
             <th class="px-4 py-3">Thứ tự</th>
             <th class="px-4 py-3">Trạng thái</th>
             <th class="px-4 py-3" />
@@ -150,6 +184,10 @@ useSeoMeta({ title: 'Banner - Cá Nhà Biển Admin' })
             </td>
             <td class="px-4 py-3 font-medium text-highlighted">
               {{ banner.title || '(không có tiêu đề)' }}
+            </td>
+            <td class="px-4 py-3 text-muted">
+              <span v-if="banner.buttons.length">{{ banner.buttons.map(b => b.label).join(', ') }}</span>
+              <span v-else>—</span>
             </td>
             <td class="px-4 py-3 text-muted">
               {{ banner.position }}
@@ -174,7 +212,7 @@ useSeoMeta({ title: 'Banner - Cá Nhà Biển Admin' })
             </td>
           </tr>
           <tr v-if="!banners?.length">
-            <td colspan="5" class="px-4 py-10 text-center text-muted">
+            <td colspan="6" class="px-4 py-10 text-center text-muted">
               Chưa có banner nào
             </td>
           </tr>
@@ -204,14 +242,36 @@ useSeoMeta({ title: 'Banner - Cá Nhà Biển Admin' })
           <UFormField label="Mô tả phụ">
             <UTextarea v-model="form.subtitle" :rows="2" class="w-full" />
           </UFormField>
-          <div class="grid grid-cols-2 gap-4">
-            <UFormField label="Nhãn nút">
-              <UInput v-model="form.ctaLabel" placeholder="Mua ngay" class="w-full" />
-            </UFormField>
-            <UFormField label="Liên kết nút">
-              <UInput v-model="form.ctaLink" placeholder="/products" class="w-full" />
-            </UFormField>
-          </div>
+          <UFormField label="Nút bấm">
+            <div class="space-y-3">
+              <div
+                v-for="(btn, idx) in form.buttons"
+                :key="idx"
+                class="space-y-2 rounded-lg border border-default p-3"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-medium text-muted">Nút {{ idx + 1 }}</span>
+                  <UButton
+                    icon="i-lucide-x"
+                    size="xs"
+                    variant="ghost"
+                    color="error"
+                    @click="form.buttons.splice(idx, 1)"
+                  />
+                </div>
+                <UInput v-model="btn.label" placeholder="Nhãn nút, ví dụ Mua ngay" class="w-full" />
+                <URadioGroup v-model="btn.linkType" :items="linkTypeOptions" orientation="horizontal" />
+                <UInput
+                  v-model="btn.link"
+                  :placeholder="btn.linkType === 'internal' ? '/products' : 'https://example.com'"
+                  class="w-full"
+                />
+              </div>
+              <UButton icon="i-lucide-plus" size="sm" variant="outline" @click="addButton">
+                Thêm nút
+              </UButton>
+            </div>
+          </UFormField>
           <UFormField label="Thứ tự hiển thị">
             <UInputNumber v-model="form.position" :min="0" />
           </UFormField>

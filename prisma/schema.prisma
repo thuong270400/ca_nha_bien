@@ -124,6 +124,10 @@ model Category {
   /// và hiện nút "Xem tất cả" — null nghĩa là hiển thị toàn bộ sản phẩm.
   homepageLimit Int?
   position      Int      @default(0)
+  /// Thứ tự sắp xếp mặc định khi hiển thị sản phẩm của danh mục này (trang chủ
+  /// và trang danh mục) — cùng bộ giá trị với `sort` của GET /api/products,
+  /// xem CategoryDefaultSort ở category.schema.ts.
+  defaultSort   String   @default("newest")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -151,6 +155,12 @@ model Product {
   price          Decimal? @db.Decimal(12, 2)
   compareAtPrice Decimal? @db.Decimal(12, 2)
 
+  /// Tổng tồn kho của mọi biến thể, do product.service đồng bộ mỗi khi variants
+  /// thay đổi và order.service giảm cùng lúc với stock của variant khi tạo đơn —
+  /// mirror của pattern price-sync ở trên, dùng để sort theo tồn kho ở danh sách
+  /// sản phẩm mà không cần order-by/sum trên quan hệ 1-nhiều trong Prisma.
+  stock Int @default(0)
+
   /// Tổng số lượng đã bán thành công, cộng dồn khi order được tạo — dùng cho
   /// mục "Cá bán chạy" ở trang chủ và thống kê admin.
   soldCount Int @default(0)
@@ -174,6 +184,7 @@ model Product {
   @@index([status])
   @@index([price])
   @@index([soldCount])
+  @@index([stock])
   @@map("products")
 }
 
@@ -461,15 +472,28 @@ model Banner {
   imageUrl  String
   title     String?
   subtitle  String?
-  ctaLabel  String?
-  ctaLink   String?
   position  Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  buttons BannerButton[]
+
   @@index([isActive])
   @@map("banners")
+}
+
+model BannerButton {
+  id       String @id @default(cuid())
+  bannerId String
+  label    String
+  link     String
+  position Int    @default(0)
+
+  banner Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+
+  @@index([bannerId])
+  @@map("banner_buttons")
 }
 
 enum SocialLinkIconType {

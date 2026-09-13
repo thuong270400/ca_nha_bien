@@ -17,10 +17,6 @@ const items = [
     content: 'Hiện tại Cá Nhà Biển hỗ trợ thanh toán khi nhận hàng (COD). Các hình thức thanh toán trực tuyến VNPay, MoMo, ZaloPay sẽ sớm được ra mắt.',
   },
   {
-    label: 'Nếu sản phẩm không tươi hoặc giao sai thì sao?',
-    content: 'Vui lòng phản ánh trong vòng 2 giờ kể từ lúc nhận hàng qua hotline hoặc email hỗ trợ, Cá Nhà Biển sẽ đổi sản phẩm mới hoặc hoàn tiền tương ứng. Xem chi tiết tại trang Chính sách đổi trả.',
-  },
-  {
     label: 'Làm sao để áp dụng mã giảm giá?',
     content: 'Tại trang thanh toán, nhập mã giảm giá vào ô "Mã giảm giá" và nhấn Áp dụng trước khi đặt hàng.',
   },

@@ -13,13 +13,19 @@ export interface Post {
   createdAt: string
 }
 
+export interface BannerButton {
+  id: string
+  label: string
+  link: string
+  position: number
+}
+
 export interface Banner {
   id: string
   imageUrl: string
   title: string | null
   subtitle: string | null
-  ctaLabel: string | null
-  ctaLink: string | null
+  buttons: BannerButton[]
   position: number
   isActive: boolean
 }
