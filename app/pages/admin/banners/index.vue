@@ -17,7 +17,7 @@ const linkTypeOptions = [
 ]
 
 function detectLinkType(link: string | null | undefined): 'internal' | 'external' {
-  return link && /^https?:\/\//i.test(link) ? 'external' : 'internal'
+  return link && isExternalLink(link) ? 'external' : 'internal'
 }
 
 interface ButtonForm {
@@ -99,7 +99,7 @@ async function save() {
       toast.add({ title: 'Lỗi', description: 'Đường dẫn trong web phải bắt đầu bằng /, ví dụ /products', color: 'error' })
       return
     }
-    if (btn.linkType === 'external' && !/^https?:\/\//i.test(link)) {
+    if (btn.linkType === 'external' && !isExternalLink(link)) {
       toast.add({ title: 'Lỗi', description: 'Liên kết trang ngoài phải bắt đầu bằng http:// hoặc https://', color: 'error' })
       return
     }
@@ -186,7 +186,15 @@ useSeoMeta({ title: 'Banner - Cá Nhà Biển Admin' })
               {{ banner.title || '(không có tiêu đề)' }}
             </td>
             <td class="px-4 py-3 text-muted">
-              <span v-if="banner.buttons.length">{{ banner.buttons.map(b => b.label).join(', ') }}</span>
+              <span v-if="banner.buttons.length" class="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                <template v-for="(b, idx) in banner.buttons" :key="b.id">
+                  <span v-if="idx > 0">,</span>
+                  <span class="inline-flex items-center gap-1">
+                    {{ b.label }}
+                    <UIcon v-if="isExternalLink(b.link)" name="i-lucide-external-link" class="size-3.5" />
+                  </span>
+                </template>
+              </span>
               <span v-else>—</span>
             </td>
             <td class="px-4 py-3 text-muted">
@@ -266,6 +274,10 @@ useSeoMeta({ title: 'Banner - Cá Nhà Biển Admin' })
                   :placeholder="btn.linkType === 'internal' ? '/products' : 'https://example.com'"
                   class="w-full"
                 />
+                <p v-if="btn.linkType === 'external'" class="flex items-center gap-1 text-xs text-muted">
+                  <UIcon name="i-lucide-external-link" class="size-3.5" />
+                  Nút sẽ mở liên kết này ở tab mới
+                </p>
               </div>
               <UButton icon="i-lucide-plus" size="sm" variant="outline" @click="addButton">
                 Thêm nút

@@ -43,9 +43,10 @@ useCanonical('/')
                 v-for="(btn, idx) in item.buttons"
                 :key="btn.id"
                 :to="btn.link"
+                :target="isExternalLink(btn.link) ? '_blank' : undefined"
                 size="lg"
                 :variant="idx === 0 ? 'solid' : 'outline'"
-                :trailing-icon="idx === 0 ? 'i-lucide-arrow-right' : undefined"
+                :trailing-icon="isExternalLink(btn.link) ? 'i-lucide-external-link' : (idx === 0 ? 'i-lucide-arrow-right' : undefined)"
               >
                 {{ btn.label }}
               </UButton>
