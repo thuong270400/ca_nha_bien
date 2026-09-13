@@ -30,8 +30,8 @@ async function logout() {
     <UContainer class="flex h-9 items-center gap-4">
       <div class="min-w-0 flex-1 overflow-hidden">
         <div class="flex w-max animate-marquee whitespace-nowrap">
-          <span class="pr-16">Cá tươi, hải sản tươi sống đánh bắt trong ngày — giao tận nhà mỗi sáng.</span>
-          <span class="pr-16" aria-hidden="true">Cá tươi, hải sản tươi sống đánh bắt trong ngày — giao tận nhà mỗi sáng.</span>
+          <span class="pr-16">Cá tươi mới tại ghe mỗi ngày – giao tận nơi.</span>
+          <span class="pr-16" aria-hidden="true">Cá tươi mới tại ghe mỗi ngày – giao tận nơi.</span>
         </div>
       </div>
       <a :href="`tel:${contact.hotline}`" class="flex shrink-0 items-center gap-1.5 font-medium text-primary hover:underline">

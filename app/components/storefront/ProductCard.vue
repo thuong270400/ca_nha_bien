@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Product } from '#shared/types/catalog'
 
-const props = defineProps<{ product: Product }>()
+const props = withDefaults(defineProps<{ product: Product, index?: number }>(), { index: 0 })
 
 const { loggedIn, user } = useUserSession()
 const wishlistStore = useWishlistStore()
@@ -48,12 +48,38 @@ const discountPercent = computed(() => {
   if (!compareAt || compareAt <= price) return null
   return Math.round((1 - price / compareAt) * 100)
 })
+
+const hasShine = computed(() => totalStock.value > 0)
+// Bumped to force the shine span to remount and replay its sweep animation.
+const shineRunId = ref(0)
+// Staggered delay only applies to the initial appear sweep, not hover replays.
+const shineDelay = computed(() => shineRunId.value === 0 ? `${(props.index % 10) * 0.15}s` : '0s')
+
+const SHINE_REPEAT_MS = 3600
+let shineInterval: ReturnType<typeof setInterval> | null = null
+
+function startShineLoop() {
+  if (!hasShine.value) return
+  shineRunId.value++
+  shineInterval = setInterval(() => { shineRunId.value++ }, SHINE_REPEAT_MS)
+}
+
+function stopShineLoop() {
+  if (shineInterval) {
+    clearInterval(shineInterval)
+    shineInterval = null
+  }
+}
+
+onUnmounted(stopShineLoop)
 </script>
 
 <template>
   <NuxtLink
     :to="`/products/${product.slug}`"
-    class="group flex flex-col overflow-hidden rounded-xl border border-default bg-default transition hover:shadow-lg"
+    class="group relative flex flex-col overflow-hidden rounded-xl border border-default bg-default transition hover:shadow-lg"
+    @mouseenter="startShineLoop"
+    @mouseleave="stopShineLoop"
   >
     <div class="relative aspect-square overflow-hidden bg-default">
       <img
@@ -113,6 +139,14 @@ const discountPercent = computed(() => {
       >
         <UIcon name="i-lucide-pencil" class="size-4 text-primary" />
       </button>
+
+      <span
+        v-if="hasShine"
+        :key="shineRunId"
+        class="shine-sweep pointer-events-none absolute inset-0 transition-transform duration-500 ease-out group-hover:-translate-y-4"
+        :style="{ '--shine-delay': shineDelay }"
+        aria-hidden="true"
+      />
     </div>
 
     <div class="flex flex-1 flex-col gap-1 p-3">
@@ -166,3 +200,34 @@ const discountPercent = computed(() => {
     @updated="onProductUpdated"
   />
 </template>
+
+<style scoped>
+.shine-sweep {
+  overflow: hidden;
+}
+
+.shine-sweep::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: linear-gradient(45deg, transparent 42%, rgba(255, 255, 255, 0.75) 50%, transparent 58%);
+  transform: translate(-100%, 100%);
+  animation: shine-sweep 2.6s cubic-bezier(0.4, 0, 0.2, 1) var(--shine-delay, 0s) 1 both;
+}
+
+@keyframes shine-sweep {
+  0% {
+    transform: translate(-100%, 100%);
+  }
+  100% {
+    transform: translate(100%, -100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shine-sweep::before {
+    animation: none;
+    display: none;
+  }
+}
+</style>

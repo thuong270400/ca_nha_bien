@@ -118,7 +118,7 @@ useCanonical('/')
             Cam kết tươi 100%
           </h3>
           <p class="mt-1 text-sm text-muted">
-            Đánh bắt và giao trong ngày, không qua đông lạnh lâu ngày.
+            Lấy cá tươi mới tại ghe mỗi ngày và giao tận nơi cho quý khách.
           </p>
         </div>
       </UContainer>

@@ -31,7 +31,7 @@ defineProps<{
           </UButton>
         </div>
         <div class="grid grid-cols-2 gap-4 bg-elevated p-4 sm:grid-cols-3 sm:p-6 lg:grid-cols-5">
-          <StorefrontProductCard v-for="product in products" :key="product.id" :product="product" />
+          <StorefrontProductCard v-for="(product, index) in products" :key="product.id" :product="product" :index="index" />
         </div>
       </div>
     </UContainer>

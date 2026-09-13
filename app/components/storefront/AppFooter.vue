@@ -44,7 +44,7 @@ function sizeOf(size: string) {
               Cá Nhà Biển
             </div>
             <p class="mt-3 text-sm text-muted">
-              Cá tươi, hải sản tươi sống đánh bắt trong ngày — giao tận nhà mỗi sáng.
+              Cá tươi mới tại ghe mỗi ngày – giao tận nơi.
             </p>
           </div>
 
@@ -68,10 +68,7 @@ function sizeOf(size: string) {
             </h3>
             <ul class="space-y-2 text-sm text-muted">
               <li class="flex items-center gap-2">
-                <UIcon name="i-lucide-badge-check" class="size-4 text-primary" /> Cá tươi trong ngày
-              </li>
-              <li class="flex items-center gap-2">
-                <UIcon name="i-lucide-snowflake" class="size-4 text-primary" /> Bảo quản lạnh đạt chuẩn
+                <UIcon name="i-lucide-badge-check" class="size-4 text-primary" /> Cam kết cá tươi lấy tại ghe mỗi ngày.
               </li>
             </ul>
           </div>

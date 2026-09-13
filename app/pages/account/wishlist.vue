@@ -26,7 +26,7 @@ useSeoMeta({ title: 'Sản phẩm yêu thích - Cá Nhà Biển' })
           </UButton>
         </div>
         <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <StorefrontProductCard v-for="item in items" :key="item.id" :product="item.product" />
+          <StorefrontProductCard v-for="(item, index) in items" :key="item.id" :product="item.product" :index="index" />
         </div>
       </div>
     </div>

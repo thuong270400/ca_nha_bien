@@ -204,7 +204,7 @@ useCanonical(`/categories/${slug}`)
         </div>
 
         <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <StorefrontProductCard v-for="product in data.data" :key="product.id" :product="product" />
+          <StorefrontProductCard v-for="(product, index) in data.data" :key="product.id" :product="product" :index="index" />
         </div>
 
         <div v-if="data && data.meta.totalPages > 1" class="mt-8 flex justify-center">
