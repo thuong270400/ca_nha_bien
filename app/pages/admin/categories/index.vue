@@ -19,6 +19,7 @@ const form = reactive({
   isFeatured: false,
   limitProducts: false,
   homepageLimit: 8,
+  position: 0,
 })
 const slugTouched = ref(false)
 
@@ -36,6 +37,7 @@ function openCreate() {
   form.isFeatured = false
   form.limitProducts = false
   form.homepageLimit = 8
+  form.position = Math.max(0, ...(categories.value ?? []).map((c: Category) => c.position)) + 1
   slugTouched.value = false
   open.value = true
 }
@@ -50,6 +52,7 @@ function openEdit(category: Category) {
   form.isFeatured = category.isFeatured
   form.limitProducts = category.homepageLimit !== null
   form.homepageLimit = category.homepageLimit ?? 8
+  form.position = category.position
   slugTouched.value = true
   open.value = true
 }
@@ -65,6 +68,7 @@ async function save() {
       isActive: form.isActive,
       isFeatured: form.isFeatured,
       homepageLimit: form.limitProducts ? form.homepageLimit : null,
+      position: form.position,
     }
     if (editing.value) {
       await $fetch(`/api/categories/${editing.value.id}`, { method: 'PATCH', body: payload })
@@ -100,6 +104,29 @@ async function remove(category: Category) {
   }
 }
 
+const reorderingId = ref<string | null>(null)
+async function move(category: Category, direction: 'up' | 'down') {
+  const list = categories.value ?? []
+  const index = list.findIndex(c => c.id === category.id)
+  const targetIndex = direction === 'up' ? index - 1 : index + 1
+  const target = list[targetIndex]
+  if (!target) return
+
+  reorderingId.value = category.id
+  try {
+    await Promise.all([
+      $fetch(`/api/categories/${category.id}`, { method: 'PATCH', body: { position: target.position } }),
+      $fetch(`/api/categories/${target.id}`, { method: 'PATCH', body: { position: category.position } }),
+    ])
+    await refresh()
+  } catch (err) {
+    const message = (err as { data?: { message?: string } })?.data?.message ?? 'Không thể thay đổi thứ tự'
+    toast.add({ title: 'Lỗi', description: message, color: 'error' })
+  } finally {
+    reorderingId.value = null
+  }
+}
+
 useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
 </script>
 
@@ -121,6 +148,9 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
         <thead class="bg-elevated text-left text-xs uppercase text-muted">
           <tr>
             <th class="px-4 py-3">
+              Thứ tự
+            </th>
+            <th class="px-4 py-3">
               Tên
             </th>
             <th class="px-4 py-3">
@@ -136,7 +166,30 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
           </tr>
         </thead>
         <tbody class="divide-y divide-default">
-          <tr v-for="category in categories ?? []" :key="category.id">
+          <tr v-for="(category, i) in categories ?? []" :key="category.id">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-1">
+                <span class="w-6 text-muted">{{ category.position }}</span>
+                <UButton
+                  icon="i-lucide-chevron-up"
+                  size="xs"
+                  variant="ghost"
+                  color="neutral"
+                  :disabled="i === 0"
+                  :loading="reorderingId === category.id"
+                  @click="move(category, 'up')"
+                />
+                <UButton
+                  icon="i-lucide-chevron-down"
+                  size="xs"
+                  variant="ghost"
+                  color="neutral"
+                  :disabled="i === (categories?.length ?? 0) - 1"
+                  :loading="reorderingId === category.id"
+                  @click="move(category, 'down')"
+                />
+              </div>
+            </td>
             <td class="px-4 py-3 font-medium text-highlighted">
               {{ category.name }}
             </td>
@@ -173,7 +226,7 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
             </td>
           </tr>
           <tr v-if="!categories?.length">
-            <td colspan="5" class="px-4 py-10 text-center text-muted">
+            <td colspan="6" class="px-4 py-10 text-center text-muted">
               Chưa có danh mục nào
             </td>
           </tr>
@@ -195,6 +248,9 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
           </UFormField>
           <UFormField label="URL ảnh">
             <UInput v-model="form.imageUrl" placeholder="/images/..." class="w-full" />
+          </UFormField>
+          <UFormField label="Thứ tự hiển thị" description="Số nhỏ hơn hiển thị trước, trên trang chủ và danh sách danh mục">
+            <UInputNumber v-model="form.position" :min="0" />
           </UFormField>
           <UCheckbox v-model="form.isActive" label="Hiển thị trên cửa hàng" />
           <UCheckbox
