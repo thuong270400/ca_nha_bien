@@ -24,6 +24,7 @@ useCanonical('/')
       <UCarousel
         v-slot="{ item }"
         :items="data.banners"
+        :autoplay="{ delay: 5000, stopOnInteraction: false }"
         arrows
         dots
         loop
@@ -90,9 +91,16 @@ useCanonical('/')
       :key="section.id"
       :title="section.name"
       :description="section.description ?? undefined"
+      :image-url="section.imageUrl ?? undefined"
       :products="section.products"
       :view-all-to="section.hasMore ? `/categories/${section.slug}` : undefined"
     />
+
+    <div class="py-4">
+      <UContainer>
+        <div class="mx-auto h-0.5 w-full max-w-2xl bg-gradient-to-r from-transparent via-primary to-transparent" />
+      </UContainer>
+    </div>
 
     <section class="bg-elevated py-12">
       <UContainer>
@@ -107,5 +115,11 @@ useCanonical('/')
         </div>
       </UContainer>
     </section>
+
+    <div class="py-4">
+      <UContainer>
+        <div class="mx-auto h-0.5 w-full max-w-2xl bg-gradient-to-r from-transparent via-primary to-transparent" />
+      </UContainer>
+    </div>
   </div>
 </template>

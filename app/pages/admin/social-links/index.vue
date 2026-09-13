@@ -231,7 +231,7 @@ useSeoMeta({ title: 'Mạng xã hội - Cá Nhà Biển Admin' })
     <UModal v-model:open="open" :title="editing ? 'Sửa liên kết' : 'Thêm liên kết'">
       <template #body>
         <div class="space-y-4">
-          <UFormField label="Tên gợi nhớ">
+          <UFormField label="Tên gợi nhớ" description="Hiển thị dưới dạng hint khi rê chuột vào nút cố định bên phải (nếu chọn vị trí Cố định)">
             <UInput v-model="form.label" placeholder="Facebook Cá Nhà Biển" class="w-full" />
           </UFormField>
           <UFormField label="URL" required>

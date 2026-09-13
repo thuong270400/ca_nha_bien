@@ -22,13 +22,6 @@ const form = reactive({
 })
 const slugTouched = ref(false)
 
-const MAX_FEATURED = 3
-const totalFeaturedCount = computed(() => (categories.value ?? []).filter(c => c.isFeatured).length)
-const featuredCountExcludingEditing = computed(() =>
-  (categories.value ?? []).filter(c => c.isFeatured && c.id !== editing.value?.id).length,
-)
-const featuredLimitReached = computed(() => !form.isFeatured && featuredCountExcludingEditing.value >= MAX_FEATURED)
-
 watch(() => form.name, (name) => {
   if (!slugTouched.value) form.slug = slugify(name)
 })
@@ -117,9 +110,6 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
         <h1 class="text-xl font-bold text-highlighted">
           Danh mục
         </h1>
-        <p class="mt-1 text-sm text-muted">
-          Đã chọn {{ totalFeaturedCount }}/{{ MAX_FEATURED }} danh mục hiển thị trên trang chủ
-        </p>
       </div>
       <UButton icon="i-lucide-plus" @click="openCreate">
         Thêm danh mục
@@ -209,11 +199,7 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
           <UCheckbox v-model="form.isActive" label="Hiển thị trên cửa hàng" />
           <UCheckbox
             v-model="form.isFeatured"
-            :disabled="featuredLimitReached"
             label="Hiển thị trên trang chủ"
-            :description="featuredLimitReached
-              ? `Đã đạt tối đa ${MAX_FEATURED} danh mục — bỏ chọn danh mục khác trước`
-              : `Tối đa ${MAX_FEATURED} danh mục hiển thị trên trang chủ`"
           />
           <div v-if="form.isFeatured" class="space-y-3 rounded-lg border border-default p-3">
             <UCheckbox
