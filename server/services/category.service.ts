@@ -15,11 +15,10 @@ export async function listCategories(activeOnly?: boolean) {
  * capped at `homepageLimit` (null = show every product in that category).
  * `hasMore` tells the frontend whether to render a "Xem tất cả" button.
  */
-export async function getHomepageCategorySections(maxCategories = 3) {
+export async function getHomepageCategorySections() {
   const categories = await prisma.category.findMany({
     where: { isActive: true, isFeatured: true },
     orderBy: [{ position: 'asc' }, { name: 'asc' }],
-    take: maxCategories,
   })
 
   return Promise.all(categories.map(async (category) => {

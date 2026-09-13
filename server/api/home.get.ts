@@ -3,7 +3,7 @@ import { getHomepageCategorySections } from '../services/category.service'
 
 export default defineApiHandler(async () => {
   const [categorySections, banners] = await Promise.all([
-    getHomepageCategorySections(3),
+    getHomepageCategorySections(),
     getActiveBanners(),
   ])
 
