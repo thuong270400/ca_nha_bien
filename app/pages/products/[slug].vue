@@ -131,7 +131,7 @@ useHead(() => ({
           <img
             :src="product.images[selectedImageIndex]?.url ?? '/images/placeholder-fish.svg'"
             :alt="product.images[selectedImageIndex]?.alt ?? product.name"
-            class="size-full object-cover"
+            class="size-full object-contain"
           >
           <div v-if="imageTags.length" class="absolute left-3 top-3 flex flex-col items-start gap-1">
             <span

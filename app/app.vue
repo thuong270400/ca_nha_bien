@@ -4,5 +4,6 @@
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
+    <AppLoadingOverlay />
   </UApp>
 </template>
