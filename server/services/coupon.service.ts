@@ -80,8 +80,8 @@ export function computeDiscount(coupon: CouponForDiscount, subtotal: number): nu
 
 type CouponClient = PrismaClient | Prisma.TransactionClient
 
-/** Currently redeemable coupons (active, within date window, under usage limit) for the storefront's "view coupons" picker. */
-export async function listAvailableCoupons(subtotal: number) {
+/** Coupons currently within their active window and usage limit — active, in date range, not exhausted. */
+async function fetchRedeemableCoupons() {
   const now = new Date()
   const coupons = await prisma.coupon.findMany({
     where: {
@@ -94,9 +94,29 @@ export async function listAvailableCoupons(subtotal: number) {
     include: { category: true },
     orderBy: { createdAt: 'desc' },
   })
+  return coupons.filter(c => c.usageLimit === null || c.usedCount < c.usageLimit)
+}
+
+/** Promo listing for the landing page's coupon ticket row — not tied to any cart, so no eligibility/discount computed. */
+export async function listPromotedCoupons() {
+  const coupons = await fetchRedeemableCoupons()
+  return coupons.map(coupon => ({
+    code: coupon.code,
+    type: coupon.type,
+    value: coupon.value,
+    minOrderValue: coupon.minOrderValue,
+    maxDiscount: coupon.maxDiscount,
+    usageLimit: coupon.usageLimit,
+    categoryId: coupon.categoryId,
+    categoryName: coupon.category.name,
+  }))
+}
+
+/** Currently redeemable coupons (active, within date window, under usage limit) for the storefront's "view coupons" picker. */
+export async function listAvailableCoupons(subtotal: number) {
+  const coupons = await fetchRedeemableCoupons()
 
   return coupons
-    .filter(c => c.usageLimit === null || c.usedCount < c.usageLimit)
     .map((coupon) => {
       const minOrderValue = coupon.minOrderValue ? Number(coupon.minOrderValue) : 0
       const eligible = subtotal >= minOrderValue

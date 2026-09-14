@@ -44,7 +44,7 @@ export async function updateBanner(id: string, input: BannerUpdateInput) {
     return tx.banner.update({ where: { id }, data, include: buttonsOrderBy })
   })
 
-  if (input.imageUrl && input.imageUrl !== existing.imageUrl) await deleteImage(existing.imageUrl)
+  if ('imageUrl' in input && input.imageUrl !== existing.imageUrl) await deleteImage(existing.imageUrl)
   return banner
 }
 

@@ -7,7 +7,7 @@ export const bannerButtonSchema = z.object({
 })
 
 export const bannerCreateSchema = z.object({
-  imageUrl: z.string().trim().min(1, 'URL ảnh không được để trống').max(1000),
+  imageUrl: z.string().trim().max(1000).nullable().optional(),
   title: z.string().trim().max(200).optional(),
   subtitle: z.string().trim().max(500).optional(),
   buttons: z.array(bannerButtonSchema).optional(),

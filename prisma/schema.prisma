@@ -526,7 +526,7 @@ model Post {
 
 model Banner {
   id        String   @id @default(cuid())
-  imageUrl  String
+  imageUrl  String?
   title     String?
   subtitle  String?
   position  Int      @default(0)

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { CategoryHomeSection } from '#shared/types/catalog'
 import type { Banner } from '#shared/types/content'
+import type { CouponPromoView } from '#shared/types/coupon'
 
 interface HomeData {
   categorySections: CategoryHomeSection[]
   banners: Banner[]
+  promotedCoupons: CouponPromoView[]
 }
 
 const { data } = await useFetch<HomeData>('/api/home', { key: 'home-data' })
@@ -20,7 +22,10 @@ useCanonical('/')
 
 <template>
   <div>
-    <section v-if="data?.banners.length" class="bg-gradient-to-br from-sky-50 to-white dark:from-ocean-950 dark:to-gray-950">
+    <section
+      v-if="data?.banners.length"
+      class="bg-[linear-gradient(rgba(0,0,0,0.35),rgba(0,0,0,0.35)),url('/images/background/bien_oi.png')] bg-cover bg-center bg-no-repeat"
+    >
       <UCarousel
         v-slot="{ item }"
         :items="data.banners"
@@ -30,15 +35,25 @@ useCanonical('/')
         loop
         class="mx-auto max-w-7xl"
       >
-        <UContainer class="grid min-h-[90vh] items-center gap-8 py-12 lg:grid-cols-[1fr_1.4fr] lg:py-20">
-          <div>
-            <h1 v-if="item.title" class="text-3xl font-bold leading-tight text-highlighted sm:text-4xl lg:text-5xl">
+        <UContainer
+          class="grid min-h-[90vh] items-center gap-8 py-12 lg:py-20"
+          :class="item.imageUrl ? 'lg:grid-cols-[1fr_1.4fr]' : 'lg:grid-cols-1'"
+        >
+          <div
+            class="rounded-2xl bg-white/10 p-6 shadow-lg backdrop-blur-[2px] dark:bg-black/10"
+            :class="{ 'mx-auto max-w-2xl text-center': !item.imageUrl }"
+          >
+            <h1 v-if="item.title" class="text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
               {{ item.title }}
             </h1>
-            <p v-if="item.subtitle" class="mt-4 max-w-md text-muted">
+            <p v-if="item.subtitle" class="mt-4 max-w-md text-white/80">
               {{ item.subtitle }}
             </p>
-            <div v-if="item.buttons.length" class="mt-6 flex flex-wrap gap-3">
+            <div
+              v-if="item.buttons.length"
+              class="mt-6 flex flex-wrap gap-3"
+              :class="{ 'justify-center': !item.imageUrl }"
+            >
               <UButton
                 v-for="(btn, idx) in item.buttons"
                 :key="btn.id"
@@ -52,7 +67,7 @@ useCanonical('/')
               </UButton>
             </div>
           </div>
-          <div class="relative flex aspect-[16/9] items-center justify-center overflow-hidden rounded-2xl">
+          <div v-if="item.imageUrl" class="relative flex aspect-[16/9] items-center justify-center overflow-hidden rounded-2xl">
             <img
               :src="item.imageUrl"
               :alt="item.title ?? 'Cá Nhà Biển'"
@@ -93,6 +108,8 @@ useCanonical('/')
         </div>
       </UContainer>
     </section>
+
+    <StorefrontCouponTicketRow :coupons="data?.promotedCoupons ?? []" />
 
     <StorefrontProductSection
       v-for="section in data?.categorySections ?? []"

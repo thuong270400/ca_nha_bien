@@ -22,7 +22,7 @@ export interface BannerButton {
 
 export interface Banner {
   id: string
-  imageUrl: string
+  imageUrl: string | null
   title: string | null
   subtitle: string | null
   buttons: BannerButton[]

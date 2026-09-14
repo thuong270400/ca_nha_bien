@@ -27,7 +27,7 @@ interface ButtonForm {
 }
 
 const form = reactive({
-  imageUrl: '',
+  imageUrl: '' as string | null,
   title: '',
   subtitle: '',
   buttons: [] as ButtonForm[],
@@ -61,6 +61,13 @@ function openEdit(banner: Banner) {
   open.value = true
 }
 
+function removeImage() {
+  if (form.imageUrl && form.imageUrl !== (editing.value?.imageUrl ?? null)) {
+    deleteUploadedImage(form.imageUrl)
+  }
+  form.imageUrl = null
+}
+
 async function onFileSelected(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
@@ -73,7 +80,7 @@ async function onFileSelected(e: Event) {
     const res = await $fetch<{ url: string }>('/api/admin/uploads', { method: 'POST', body })
     // If the previous image was itself an unsaved upload from this same session
     // (not the persisted one being edited), it's about to be orphaned — clean it up.
-    if (form.imageUrl && form.imageUrl !== (editing.value?.imageUrl ?? '')) {
+    if (form.imageUrl && form.imageUrl !== (editing.value?.imageUrl ?? null)) {
       deleteUploadedImage(form.imageUrl)
     }
     form.imageUrl = res.url
@@ -108,7 +115,7 @@ async function save() {
   saving.value = true
   try {
     const payload = {
-      imageUrl: form.imageUrl,
+      imageUrl: form.imageUrl || null,
       title: form.title || undefined,
       subtitle: form.subtitle || undefined,
       buttons,
@@ -178,8 +185,9 @@ useSeoMeta({ title: 'Banner - Cá Nhà Biển Admin' })
         <tbody class="divide-y divide-default">
           <tr v-for="banner in banners ?? []" :key="banner.id">
             <td class="px-4 py-3">
-              <div class="h-12 w-20 overflow-hidden rounded-md bg-elevated">
-                <img :src="banner.imageUrl" alt="" class="size-full object-cover">
+              <div class="flex h-12 w-20 items-center justify-center overflow-hidden rounded-md bg-elevated">
+                <img v-if="banner.imageUrl" :src="banner.imageUrl" alt="" class="size-full object-cover">
+                <UIcon v-else name="i-lucide-image-off" class="size-5 text-muted" />
               </div>
             </td>
             <td class="px-4 py-3 font-medium text-highlighted">
@@ -231,10 +239,17 @@ useSeoMeta({ title: 'Banner - Cá Nhà Biển Admin' })
     <UModal v-model:open="open" :title="editing ? 'Sửa banner' : 'Thêm banner'">
       <template #body>
         <div class="space-y-4">
-          <UFormField label="Ảnh" required>
+          <UFormField label="Ảnh">
             <div class="flex items-center gap-3">
-              <div v-if="form.imageUrl" class="h-16 w-28 overflow-hidden rounded-md border border-default bg-elevated">
+              <div v-if="form.imageUrl" class="relative h-16 w-28 overflow-hidden rounded-md border border-default bg-elevated">
                 <img :src="form.imageUrl" alt="" class="size-full object-cover">
+                <UButton
+                  icon="i-lucide-x"
+                  size="xs"
+                  color="error"
+                  class="absolute right-1 top-1"
+                  @click="removeImage"
+                />
               </div>
               <label class="cursor-pointer">
                 <UButton :loading="uploading" icon="i-lucide-upload" size="sm" variant="outline" as="span">
@@ -295,7 +310,7 @@ useSeoMeta({ title: 'Banner - Cá Nhà Biển Admin' })
           <UButton color="neutral" variant="outline" @click="open = false">
             Huỷ
           </UButton>
-          <UButton :loading="saving" :disabled="!form.imageUrl" @click="save">
+          <UButton :loading="saving" @click="save">
             Lưu
           </UButton>
         </div>

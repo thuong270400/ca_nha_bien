@@ -42,3 +42,15 @@ export interface CouponPublicView {
   /** How much more the customer needs to add to the cart to become eligible (0 when already eligible). */
   missingAmount: string
 }
+
+/** Landing-page promo ticket shape — not tied to a cart, so no eligibility/discount fields. */
+export interface CouponPromoView {
+  code: string
+  type: CouponType
+  value: string
+  minOrderValue: string | null
+  maxDiscount: string | null
+  usageLimit: number | null
+  categoryId: string
+  categoryName: string
+}
