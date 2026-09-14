@@ -29,7 +29,7 @@ useCanonical('/')
       <UCarousel
         v-slot="{ item }"
         :items="data.banners"
-        :autoplay="{ delay: 5000, stopOnInteraction: false }"
+        :autoplay="{ delay: 12000, stopOnInteraction: false }"
         arrows
         dots
         loop
@@ -46,7 +46,7 @@ useCanonical('/')
             <h1 v-if="item.title" class="text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
               {{ item.title }}
             </h1>
-            <p v-if="item.subtitle" class="mt-4 max-w-md text-white/80">
+            <p v-if="item.subtitle" class="mt-4 max-w-md font-semibold text-white/80" :class="{ 'mx-auto': !item.imageUrl }">
               {{ item.subtitle }}
             </p>
             <div
@@ -60,6 +60,7 @@ useCanonical('/')
                 :to="btn.link"
                 :target="isExternalLink(btn.link) ? '_blank' : undefined"
                 size="lg"
+                class="text-white"
                 :variant="idx === 0 ? 'solid' : 'outline'"
                 :trailing-icon="isExternalLink(btn.link) ? 'i-lucide-external-link' : (idx === 0 ? 'i-lucide-arrow-right' : undefined)"
               >
