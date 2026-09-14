@@ -19,6 +19,7 @@ export async function listCoupons(query: CouponListQuery) {
   const [data, total] = await Promise.all([
     prisma.coupon.findMany({
       where,
+      include: { category: true },
       orderBy: { createdAt: 'desc' },
       skip: (query.page - 1) * query.limit,
       take: query.limit,
@@ -38,7 +39,7 @@ export async function listCoupons(query: CouponListQuery) {
 }
 
 export async function getCouponById(id: string) {
-  const coupon = await prisma.coupon.findUnique({ where: { id } })
+  const coupon = await prisma.coupon.findUnique({ where: { id }, include: { category: true } })
   if (!coupon) throw Errors.notFound('Không tìm thấy mã giảm giá')
   return coupon
 }
@@ -79,9 +80,47 @@ export function computeDiscount(coupon: CouponForDiscount, subtotal: number): nu
 
 type CouponClient = PrismaClient | Prisma.TransactionClient
 
+/** Currently redeemable coupons (active, within date window, under usage limit) for the storefront's "view coupons" picker. */
+export async function listAvailableCoupons(subtotal: number) {
+  const now = new Date()
+  const coupons = await prisma.coupon.findMany({
+    where: {
+      isActive: true,
+      AND: [
+        { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+        { OR: [{ expiresAt: null }, { expiresAt: { gte: now } }] },
+      ],
+    },
+    include: { category: true },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  return coupons
+    .filter(c => c.usageLimit === null || c.usedCount < c.usageLimit)
+    .map((coupon) => {
+      const minOrderValue = coupon.minOrderValue ? Number(coupon.minOrderValue) : 0
+      const eligible = subtotal >= minOrderValue
+      const discountAmount = eligible ? computeDiscount(coupon, subtotal) : 0
+      return {
+        code: coupon.code,
+        type: coupon.type,
+        value: coupon.value,
+        minOrderValue: coupon.minOrderValue,
+        maxDiscount: coupon.maxDiscount,
+        expiresAt: coupon.expiresAt,
+        categoryId: coupon.categoryId,
+        categoryName: coupon.category.name,
+        eligible,
+        discountAmount: discountAmount.toFixed(2),
+        missingAmount: Math.max(minOrderValue - subtotal, 0).toFixed(2),
+      }
+    })
+    .sort((a, b) => Number(b.eligible) - Number(a.eligible))
+}
+
 export async function validateCoupon(client: CouponClient, codeRaw: string, subtotal: number) {
   const code = codeRaw.trim().toUpperCase()
-  const coupon = await client.coupon.findUnique({ where: { code } })
+  const coupon = await client.coupon.findUnique({ where: { code }, include: { category: true } })
   if (!coupon || !coupon.isActive) throw Errors.badRequest('Mã giảm giá không hợp lệ')
 
   const now = new Date()

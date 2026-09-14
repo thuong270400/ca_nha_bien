@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CouponView } from '#shared/types/coupon'
+import type { CouponCategoryView, CouponView } from '#shared/types/coupon'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -21,6 +21,9 @@ const { data, refresh } = await useFetch<CouponList>('/api/admin/coupons', {
   key: 'admin-coupons',
   query,
 })
+
+const { data: categories } = await useFetch<CouponCategoryView[]>('/api/coupon-categories', { key: 'admin-coupon-categories' })
+const categoryOptions = computed(() => (categories.value ?? []).map(c => ({ label: c.name, value: c.id })))
 
 function setPage(page: number) {
   router.push({ path: '/admin/coupons', query: { ...route.query, page } })
@@ -45,6 +48,7 @@ const form = reactive({
   startsAt: '',
   expiresAt: '',
   isActive: true,
+  categoryId: '',
 })
 
 function toDateInput(value: string | null) {
@@ -62,6 +66,7 @@ function openCreate() {
   form.startsAt = ''
   form.expiresAt = ''
   form.isActive = true
+  form.categoryId = categories.value?.[0]?.id ?? ''
   open.value = true
 }
 
@@ -76,6 +81,7 @@ function openEdit(coupon: CouponView) {
   form.startsAt = toDateInput(coupon.startsAt)
   form.expiresAt = toDateInput(coupon.expiresAt)
   form.isActive = coupon.isActive
+  form.categoryId = coupon.categoryId
   open.value = true
 }
 
@@ -92,6 +98,7 @@ async function save() {
       startsAt: form.startsAt || undefined,
       expiresAt: form.expiresAt || undefined,
       isActive: form.isActive,
+      categoryId: form.categoryId,
     }
     if (editing.value) {
       await $fetch(`/api/admin/coupons/${editing.value.id}`, { method: 'PATCH', body: payload })
@@ -167,6 +174,9 @@ useSeoMeta({ title: 'Mã giảm giá - Cá Nhà Biển Admin' })
               Mã
             </th>
             <th class="px-4 py-3">
+              Danh mục
+            </th>
+            <th class="px-4 py-3">
               Giá trị
             </th>
             <th class="px-4 py-3">
@@ -185,6 +195,9 @@ useSeoMeta({ title: 'Mã giảm giá - Cá Nhà Biển Admin' })
           <tr v-for="coupon in data?.data ?? []" :key="coupon.id">
             <td class="px-4 py-3 font-medium text-highlighted">
               {{ coupon.code }}
+            </td>
+            <td class="px-4 py-3 text-muted">
+              {{ coupon.category.name }}
             </td>
             <td class="px-4 py-3 text-muted">
               {{ formatValue(coupon) }}
@@ -224,7 +237,7 @@ useSeoMeta({ title: 'Mã giảm giá - Cá Nhà Biển Admin' })
             </td>
           </tr>
           <tr v-if="!data?.data.length">
-            <td colspan="6" class="px-4 py-10 text-center text-muted">
+            <td colspan="7" class="px-4 py-10 text-center text-muted">
               Chưa có mã giảm giá nào
             </td>
           </tr>
@@ -246,6 +259,9 @@ useSeoMeta({ title: 'Mã giảm giá - Cá Nhà Biển Admin' })
         <div class="space-y-4">
           <UFormField label="Mã" required>
             <UInput v-model="form.code" placeholder="VD: FISH10" class="w-full" />
+          </UFormField>
+          <UFormField label="Danh mục mã giảm giá" required description="Khách chỉ được áp 1 mã cho mỗi danh mục trên cùng một đơn hàng">
+            <USelect v-model="form.categoryId" :items="categoryOptions" class="w-full" />
           </UFormField>
           <UFormField label="Loại" required>
             <USelect v-model="form.type" :items="typeOptions" class="w-full" />

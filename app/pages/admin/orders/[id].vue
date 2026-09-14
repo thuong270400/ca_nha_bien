@@ -116,9 +116,9 @@ useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Bi
               <span class="text-muted">Tạm tính</span>
               <span>{{ formatVnd(order.subtotal) }}</span>
             </div>
-            <div v-if="Number(order.discountAmount) > 0" class="flex justify-between text-success">
-              <span>Giảm giá{{ order.couponCode ? ` (${order.couponCode})` : '' }}</span>
-              <span>-{{ formatVnd(order.discountAmount) }}</span>
+            <div v-for="c in order.coupons" :key="c.id" class="flex justify-between text-success">
+              <span>Giảm giá ({{ c.couponCode }})</span>
+              <span>-{{ formatVnd(c.discountAmount) }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-muted">Phí giao hàng</span>

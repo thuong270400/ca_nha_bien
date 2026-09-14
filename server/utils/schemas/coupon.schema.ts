@@ -15,6 +15,7 @@ export const couponCreateSchema = z.object({
   startsAt: z.coerce.date().optional(),
   expiresAt: z.coerce.date().optional(),
   isActive: z.boolean().optional(),
+  categoryId: z.string().trim().min(1, 'Vui lòng chọn danh mục mã giảm giá'),
 }).refine(v => v.type !== 'PERCENTAGE' || v.value <= 100, {
   message: 'Phần trăm giảm giá tối đa 100',
   path: ['value'],
@@ -33,6 +34,7 @@ export const couponUpdateSchema = z.object({
   startsAt: z.coerce.date().optional(),
   expiresAt: z.coerce.date().optional(),
   isActive: z.boolean().optional(),
+  categoryId: z.string().trim().min(1, 'Vui lòng chọn danh mục mã giảm giá').optional(),
 }).refine(v => v.type !== 'PERCENTAGE' || v.value === undefined || v.value <= 100, {
   message: 'Phần trăm giảm giá tối đa 100',
   path: ['value'],

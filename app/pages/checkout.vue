@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AddressView } from '#shared/types/order'
+import type { CouponPublicView } from '#shared/types/coupon'
 
 const cartStore = useCartStore()
 await cartStore.ensureLoaded()
@@ -62,9 +63,20 @@ watch(selectedAddressId, (id) => {
 
 const loading = ref(false)
 
+interface AppliedCoupon {
+  code: string
+  type: 'PERCENTAGE' | 'FIXED'
+  discountAmount: string
+  categoryId: string
+  categoryName: string
+}
+
 const couponInput = ref('')
 const applyingCoupon = ref(false)
-const appliedCoupon = ref<{ code: string, type: 'PERCENTAGE' | 'FIXED', discountAmount: string } | null>(null)
+// Keyed by categoryId so applying a second coupon from the same category
+// naturally replaces the first — at most 1 coupon per category, any number of categories at once.
+const appliedCoupons = reactive<Record<string, AppliedCoupon>>({})
+const appliedCouponsList = computed(() => Object.values(appliedCoupons))
 
 async function applyCoupon() {
   const code = couponInput.value.trim()
@@ -74,10 +86,16 @@ async function applyCoupon() {
     // Path typed as `string` (not a literal) to sidestep Nitro's typed-route inference, which
     // hits a TS "excessive stack depth" error on this project's large route map for this path.
     const validateUrl: string = '/api/coupons/validate'
-    appliedCoupon.value = await $fetch<{ code: string, type: 'PERCENTAGE' | 'FIXED', discountAmount: string }>(validateUrl, { method: 'POST', body: { code } })
-    toast.add({ title: 'Đã áp dụng mã giảm giá', color: 'success', icon: 'i-lucide-check-circle' })
+    const result = await $fetch<AppliedCoupon>(validateUrl, { method: 'POST', body: { code } })
+    const replaced = appliedCoupons[result.categoryId]
+    appliedCoupons[result.categoryId] = result
+    couponInput.value = ''
+    toast.add({
+      title: replaced && replaced.code !== result.code ? `Đã thay mã "${replaced.code}" bằng "${result.code}"` : 'Đã áp dụng mã giảm giá',
+      color: 'success',
+      icon: 'i-lucide-check-circle',
+    })
   } catch (err) {
-    appliedCoupon.value = null
     const message = (err as { data?: { message?: string } })?.data?.message ?? 'Mã giảm giá không hợp lệ'
     toast.add({ title: 'Lỗi', description: message, color: 'error' })
   } finally {
@@ -85,15 +103,37 @@ async function applyCoupon() {
   }
 }
 
-function removeCoupon() {
-  appliedCoupon.value = null
-  couponInput.value = ''
+function removeCoupon(categoryId: string) {
+  delete appliedCoupons[categoryId]
+}
+
+const couponModalOpen = ref(false)
+const loadingCoupons = ref(false)
+const availableCoupons = ref<CouponPublicView[]>([])
+
+async function openCouponModal() {
+  couponModalOpen.value = true
+  loadingCoupons.value = true
+  try {
+    // Path typed as `string`, see the note on validateUrl above.
+    const couponsUrl: string = '/api/coupons'
+    availableCoupons.value = await $fetch<CouponPublicView[]>(couponsUrl)
+  } catch {
+    availableCoupons.value = []
+  } finally {
+    loadingCoupons.value = false
+  }
+}
+
+function selectCoupon(code: string) {
+  couponInput.value = code
+  applyCoupon()
 }
 
 const total = computed(() => {
   const subtotal = Number(cartStore.cart?.subtotal ?? 0)
   const shippingFee = Number(cartStore.cart?.shippingFee ?? 0)
-  const discount = Number(appliedCoupon.value?.discountAmount ?? 0)
+  const discount = appliedCouponsList.value.reduce((sum, c) => sum + Number(c.discountAmount), 0)
   return Math.max(subtotal - discount, 0) + shippingFee
 })
 
@@ -104,7 +144,7 @@ async function submitOrder() {
       ...form,
       addressId: selectedAddressId.value === 'new' ? undefined : form.addressId,
       note: form.note || undefined,
-      couponCode: appliedCoupon.value?.code,
+      couponCodes: appliedCouponsList.value.map(c => c.code),
     }
     const order = await $fetch('/api/orders', { method: 'POST', body: payload })
     await cartStore.fetchCart()
@@ -204,29 +244,89 @@ useSeoMeta({ title: 'Thanh toán - Cá Nhà Biển' })
         </div>
         <USeparator class="my-4" />
 
-        <div class="mb-4">
-          <div v-if="!appliedCoupon" class="flex gap-2">
+        <div class="mb-4 space-y-2">
+          <div class="flex gap-2">
             <UInput v-model="couponInput" placeholder="Mã giảm giá" class="w-full" @keyup.enter="applyCoupon" />
             <UButton variant="outline" :loading="applyingCoupon" @click="applyCoupon">
               Áp dụng
             </UButton>
           </div>
-          <div v-else class="flex items-center justify-between rounded-lg bg-success/10 px-3 py-2 text-sm">
+          <div
+            v-for="c in appliedCouponsList"
+            :key="c.categoryId"
+            class="flex items-center justify-between rounded-lg bg-success/10 px-3 py-2 text-sm"
+          >
             <span class="flex items-center gap-1 text-success">
-              <UIcon name="i-lucide-ticket-check" class="size-4" /> Đã áp dụng mã "{{ appliedCoupon.code }}"
+              <UIcon name="i-lucide-ticket-check" class="size-4" /> Đã áp dụng mã "{{ c.code }}" ({{ c.categoryName }})
             </span>
-            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" @click="removeCoupon" />
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" @click="removeCoupon(c.categoryId)" />
           </div>
+          <UButton variant="link" color="primary" size="sm" icon="i-lucide-ticket-percent" class="h-auto p-0" @click="openCouponModal">
+            Xem mã giảm giá
+          </UButton>
         </div>
+
+        <UModal v-model:open="couponModalOpen" title="Mã giảm giá">
+          <template #body>
+            <div v-if="loadingCoupons" class="py-8 text-center text-sm text-muted">
+              Đang tải...
+            </div>
+            <div v-else-if="!availableCoupons.length" class="py-8 text-center text-sm text-muted">
+              Hiện chưa có mã giảm giá nào
+            </div>
+            <div v-else class="max-h-[60vh] space-y-3 overflow-y-auto">
+              <div
+                v-for="c in availableCoupons"
+                :key="c.code"
+                class="rounded-lg border p-3"
+                :class="c.eligible ? 'border-primary/30' : 'border-default'"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="font-semibold text-highlighted">
+                      {{ c.code }}
+                      <UBadge size="xs" variant="subtle" color="neutral" class="ml-1">
+                        {{ c.categoryName }}
+                      </UBadge>
+                    </p>
+                    <p class="text-sm text-muted">
+                      <template v-if="c.type === 'PERCENTAGE'">
+                        Giảm {{ Number(c.value) }}%<template v-if="c.maxDiscount"> (tối đa {{ formatVnd(c.maxDiscount) }})</template>
+                      </template>
+                      <template v-else>
+                        Giảm {{ formatVnd(c.value) }}
+                      </template>
+                    </p>
+                    <p class="text-xs text-muted">
+                      {{ c.minOrderValue && Number(c.minOrderValue) > 0 ? `Áp dụng cho đơn từ ${formatVnd(c.minOrderValue)}` : 'Áp dụng cho mọi đơn hàng' }}
+                    </p>
+                    <p v-if="!c.eligible" class="mt-1 text-xs text-warning">
+                      Mua thêm {{ formatVnd(c.missingAmount) }} để áp dụng mã này
+                    </p>
+                    <p v-else-if="appliedCoupons[c.categoryId]?.code === c.code" class="mt-1 text-xs text-success">
+                      Đang áp dụng
+                    </p>
+                    <p v-else-if="appliedCoupons[c.categoryId]" class="mt-1 text-xs text-muted">
+                      Danh mục này đang áp mã "{{ appliedCoupons[c.categoryId]?.code }}" — chọn để thay thế
+                    </p>
+                  </div>
+                  <UButton size="sm" :disabled="!c.eligible" class="shrink-0" @click="selectCoupon(c.code)">
+                    Áp dụng
+                  </UButton>
+                </div>
+              </div>
+            </div>
+          </template>
+        </UModal>
 
         <div class="space-y-2 text-sm">
           <div class="flex justify-between">
             <span class="text-muted">Tạm tính</span>
             <span>{{ formatVnd(cartStore.cart.subtotal) }}</span>
           </div>
-          <div v-if="appliedCoupon" class="flex justify-between text-success">
-            <span>Giảm giá</span>
-            <span>-{{ formatVnd(appliedCoupon.discountAmount) }}</span>
+          <div v-for="c in appliedCouponsList" :key="c.categoryId" class="flex justify-between text-success">
+            <span>Giảm giá ({{ c.code }})</span>
+            <span>-{{ formatVnd(c.discountAmount) }}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-muted">Phí giao hàng</span>

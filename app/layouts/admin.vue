@@ -16,6 +16,7 @@ const links = [
   { label: 'Bài viết', icon: 'i-lucide-newspaper', to: '/admin/posts' },
   { label: 'Liên hệ', icon: 'i-lucide-inbox', to: '/admin/contacts' },
   { label: 'Báo cáo', icon: 'i-lucide-bar-chart-3', to: '/admin/reports' },
+  { label: 'Cài đặt', icon: 'i-lucide-settings', to: '/admin/settings' },
 ]
 
 async function logout() {

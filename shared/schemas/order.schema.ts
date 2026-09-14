@@ -10,7 +10,9 @@ export const createOrderSchema = z.object({
   note: z.string().trim().max(500).optional(),
   addressId: z.string().trim().optional(),
   saveAddress: z.boolean().optional(),
-  couponCode: z.string().trim().max(30).optional(),
+  // At most 1 coupon per CouponCategory is allowed (enforced server-side in order.service.ts),
+  // so this can hold several codes at once as long as each comes from a different category.
+  couponCodes: z.array(z.string().trim().min(1).max(30)).max(20).optional(),
   // Only COD is wired up today; the schema/enum already support VNPAY/MOMO/ZALOPAY for later.
   paymentMethod: z.literal('COD').default('COD'),
 })

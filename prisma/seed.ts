@@ -1,10 +1,12 @@
 import 'dotenv/config'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../server/utils/prisma'
+import { DEFAULT_FREE_SHIPPING_THRESHOLD, DEFAULT_SHIPPING_FEE, SETTINGS_ID } from '../server/utils/shipping'
 
 const BCRYPT_ROUNDS = 12
 
 async function resetDatabase() {
+  await prisma.setting.deleteMany()
   await prisma.review.deleteMany()
   await prisma.wishlist.deleteMany()
   await prisma.orderItem.deleteMany()
@@ -12,6 +14,7 @@ async function resetDatabase() {
   await prisma.shipping.deleteMany()
   await prisma.order.deleteMany()
   await prisma.coupon.deleteMany()
+  await prisma.couponCategory.deleteMany()
   await prisma.cartItem.deleteMany()
   await prisma.cart.deleteMany()
   await prisma.productImage.deleteMany()
@@ -71,6 +74,14 @@ const productSeeds: SeedProduct[] = [
 async function main() {
   console.log('Resetting database...')
   await resetDatabase()
+
+  console.log('Seeding settings...')
+  await prisma.setting.create({
+    data: { id: SETTINGS_ID, shippingFee: DEFAULT_SHIPPING_FEE, freeShippingThreshold: DEFAULT_FREE_SHIPPING_THRESHOLD },
+  })
+
+  console.log('Seeding coupon categories...')
+  await prisma.couponCategory.create({ data: { name: 'Chung', slug: 'chung' } })
 
   console.log('Seeding categories...')
   const categoryBySlug = new Map<string, string>()

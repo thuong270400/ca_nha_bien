@@ -9,6 +9,7 @@ import { calculateShippingFee } from '../utils/shipping'
 
 const orderInclude = {
   items: true,
+  coupons: true,
   payment: true,
   shipping: true,
 } satisfies Prisma.OrderInclude
@@ -82,11 +83,17 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
       })
     }
 
-    let discountAmount = 0
-    let couponId: string | undefined
-    let couponCode: string | undefined
-    if (input.couponCode) {
-      const { coupon, discountAmount: amount } = await validateCoupon(tx, input.couponCode, subtotal)
+    // At most 1 coupon per CouponCategory — a customer can stack coupons from
+    // different categories (e.g. one "free shipping" + one "product discount")
+    // but not two from the same one.
+    const appliedCoupons: { couponId: string, couponCode: string, discountAmount: number }[] = []
+    const seenCategoryIds = new Set<string>()
+    for (const code of input.couponCodes ?? []) {
+      const { coupon, discountAmount: amount } = await validateCoupon(tx, code, subtotal)
+      if (seenCategoryIds.has(coupon.categoryId)) {
+        throw Errors.badRequest(`Chỉ được áp dụng 1 mã giảm giá cho mỗi danh mục (mã "${coupon.code}" trùng danh mục với một mã khác đã chọn)`)
+      }
+      seenCategoryIds.add(coupon.categoryId)
       // Atomic guard, mirrors the stock `stock: {gte: quantity}` guard above — usageLimit was
       // read moments earlier in this same transaction, so this re-checks it against the latest
       // committed row rather than trusting the stale value already in memory.
@@ -98,13 +105,12 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
         },
         data: { usedCount: { increment: 1 } },
       })
-      if (claim.count === 0) throw Errors.badRequest('Mã giảm giá không còn hiệu lực hoặc đã hết lượt sử dụng')
-      discountAmount = amount
-      couponId = coupon.id
-      couponCode = coupon.code
+      if (claim.count === 0) throw Errors.badRequest(`Mã giảm giá "${coupon.code}" không còn hiệu lực hoặc đã hết lượt sử dụng`)
+      appliedCoupons.push({ couponId: coupon.id, couponCode: coupon.code, discountAmount: amount })
     }
+    const discountAmount = appliedCoupons.reduce((sum, c) => sum + c.discountAmount, 0)
 
-    const shippingFee = calculateShippingFee(subtotal)
+    const shippingFee = await calculateShippingFee(subtotal, tx)
     const total = Math.max(subtotal - discountAmount, 0) + shippingFee
 
     if (input.saveAddress && ctx.userId) {
@@ -131,8 +137,6 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
         subtotal: subtotal.toFixed(2),
         shippingFee: shippingFee.toFixed(2),
         total: total.toFixed(2),
-        couponId,
-        couponCode,
         discountAmount: discountAmount.toFixed(2),
         paymentMethod: input.paymentMethod,
         recipientName: input.recipientName,
@@ -144,6 +148,9 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
         note: input.note,
         addressId: input.addressId,
         items: { createMany: { data: orderItemsData } },
+        coupons: appliedCoupons.length
+          ? { createMany: { data: appliedCoupons.map(c => ({ couponId: c.couponId, couponCode: c.couponCode, discountAmount: c.discountAmount.toFixed(2) })) } }
+          : undefined,
         payment: { create: { method: input.paymentMethod, amount: total.toFixed(2) } },
         shipping: { create: { fee: shippingFee.toFixed(2) } },
       },

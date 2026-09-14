@@ -28,7 +28,7 @@ async function assertVariantAvailable(variantId: string) {
   return variant
 }
 
-function summarizeCart(cart: { id: string, items: Prisma.CartItemGetPayload<{ include: typeof cartItemInclude }>[] }) {
+async function summarizeCart(cart: { id: string, items: Prisma.CartItemGetPayload<{ include: typeof cartItemInclude }>[] }) {
   const items = cart.items.map((item) => {
     const price = Number(item.variant.price)
     const available = item.variant.stock >= item.quantity
@@ -54,7 +54,7 @@ function summarizeCart(cart: { id: string, items: Prisma.CartItemGetPayload<{ in
   })
 
   const subtotal = items.reduce((sum, item) => sum + Number(item.lineTotal), 0)
-  const shippingFee = calculateShippingFee(subtotal)
+  const shippingFee = await calculateShippingFee(subtotal)
 
   return {
     id: cart.id,
@@ -72,7 +72,7 @@ export async function getCart(cartId: string) {
     include: { items: { orderBy: { createdAt: 'asc' }, include: cartItemInclude } },
   })
   if (!cart) throw Errors.notFound('Không tìm thấy giỏ hàng')
-  return summarizeCart(cart)
+  return await summarizeCart(cart)
 }
 
 export async function addCartItem(cartId: string, variantId: string, quantity: number) {

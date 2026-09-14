@@ -290,8 +290,10 @@ model Order {
   paymentMethod PaymentMethod @default(COD)
   paymentStatus PaymentStatus @default(PENDING)
 
-  couponId       String?
-  couponCode     String? // snapshot of the code used, independent of the Coupon row's current code
+  /// Tổng giảm giá từ mọi mã giảm giá đã áp dụng — snapshot bằng tổng discountAmount
+  /// của các OrderCoupon con (một khách chỉ áp được tối đa 1 mã/danh mục mã giảm
+  /// giá nhưng có thể áp nhiều mã ở nhiều danh mục khác nhau cùng lúc), tính một
+  /// lần khi tạo đơn, mirror của pattern denormalize Product.stock.
   discountAmount Decimal @default(0) @db.Decimal(12, 2)
 
   // Snapshot thông tin giao hàng tại thời điểm đặt (độc lập với Address gốc)
@@ -307,18 +309,36 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user     User?       @relation(fields: [userId], references: [id])
-  address  Address?    @relation(fields: [addressId], references: [id])
+  user     User?         @relation(fields: [userId], references: [id])
+  address  Address?      @relation(fields: [addressId], references: [id])
   items    OrderItem[]
+  coupons  OrderCoupon[]
   payment  Payment?
   shipping Shipping?
   reviews  Review[]
-  coupon   Coupon?     @relation(fields: [couponId], references: [id])
 
   @@index([userId])
   @@index([status])
   @@index([createdAt])
   @@map("orders")
+}
+
+/// Một đơn hàng có thể áp nhiều mã giảm giá cùng lúc, tối đa 1 mã cho mỗi
+/// CouponCategory (ép buộc ở order.service.ts#attemptCreateOrder, không phải ở
+/// DB) — bảng nối này lưu từng mã đã áp cho một đơn, tách khỏi Coupon để giữ
+/// snapshot mã/giá trị giảm tại thời điểm đặt hàng.
+model OrderCoupon {
+  id             String  @id @default(cuid())
+  orderId        String
+  couponId       String?
+  couponCode     String // snapshot of the code used, independent of the Coupon row's current code
+  discountAmount Decimal @db.Decimal(12, 2)
+
+  order  Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  coupon Coupon? @relation(fields: [couponId], references: [id])
+
+  @@index([orderId])
+  @@map("order_coupons")
 }
 
 model OrderItem {
@@ -423,6 +443,24 @@ model Wishlist {
 // Coupons
 // ---------------------------------------------------------------------------
 
+/// Nhóm mã giảm giá (vd "Miễn phí vận chuyển", "Giảm giá sản phẩm") — khách chỉ
+/// được áp 1 mã đang hoạt động cho mỗi danh mục trên cùng một đơn hàng (ép buộc ở
+/// order.service.ts), nhưng có thể áp đồng thời nhiều mã ở các danh mục khác nhau.
+model CouponCategory {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  isActive  Boolean  @default(true)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  coupons Coupon[]
+
+  @@index([slug])
+  @@map("coupon_categories")
+}
+
 model Coupon {
   id            String     @id @default(cuid())
   code          String     @unique
@@ -438,10 +476,29 @@ model Coupon {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  orders Order[]
+  categoryId String
+
+  category     CouponCategory @relation(fields: [categoryId], references: [id])
+  orderCoupons OrderCoupon[]
 
   @@index([code])
+  @@index([categoryId])
   @@map("coupons")
+}
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+
+/// Singleton row (fixed id, see SETTINGS_ID in server/utils/shipping.ts) holding
+/// site-wide, admin-configurable settings — currently just shipping.
+model Setting {
+  id                    String   @id
+  shippingFee           Decimal  @default(50000) @db.Decimal(12, 2)
+  freeShippingThreshold Decimal  @default(500000) @db.Decimal(12, 2)
+  updatedAt             DateTime @updatedAt
+
+  @@map("settings")
 }
 
 // ---------------------------------------------------------------------------

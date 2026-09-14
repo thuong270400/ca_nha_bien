@@ -34,6 +34,13 @@ export interface ShippingView {
   deliveredAt: string | null
 }
 
+export interface OrderCouponView {
+  id: string
+  couponId: string | null
+  couponCode: string
+  discountAmount: string
+}
+
 export interface OrderView {
   id: string
   orderNumber: string
@@ -42,7 +49,6 @@ export interface OrderView {
   subtotal: string
   shippingFee: string
   total: string
-  couponCode: string | null
   discountAmount: string
   paymentMethod: PaymentMethod
   paymentStatus: PaymentStatus
@@ -57,6 +63,7 @@ export interface OrderView {
   createdAt: string
   updatedAt: string
   items: OrderItemView[]
+  coupons: OrderCouponView[]
   payment: PaymentView | null
   shipping: ShippingView | null
 }

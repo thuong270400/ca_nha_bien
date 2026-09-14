@@ -7,5 +7,11 @@ export default defineApiHandler(async (event) => {
   const { code } = await readValidatedBody(event, couponValidateSchema.parse)
   const cart = await getCart(cartId)
   const { coupon, discountAmount } = await validateCoupon(prisma, code, Number(cart.subtotal))
-  return { code: coupon.code, type: coupon.type, discountAmount: discountAmount.toFixed(2) }
+  return {
+    code: coupon.code,
+    type: coupon.type,
+    discountAmount: discountAmount.toFixed(2),
+    categoryId: coupon.categoryId,
+    categoryName: coupon.category.name,
+  }
 })
