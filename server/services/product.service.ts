@@ -1,3 +1,4 @@
+import { detectVideoType } from '#shared/utils/video'
 import { Prisma } from '../generated/prisma/client'
 import { Errors } from '../utils/errors'
 import { prisma } from '../utils/prisma'
@@ -23,6 +24,7 @@ export const productInclude = {
   images: { orderBy: { position: 'asc' as const } },
   variants: { orderBy: { price: 'asc' as const } },
   tags: true,
+  suggestedDishes: { orderBy: { position: 'asc' as const } },
 } satisfies Prisma.ProductInclude
 
 type IncomingVariant = ProductCreateInput['variants'][number]
@@ -205,6 +207,17 @@ export async function createProduct(input: ProductCreateInput) {
           })),
         },
         tags: input.tagIds?.length ? { connect: input.tagIds.map(id => ({ id })) } : undefined,
+        suggestedDishes: input.suggestedDishes?.length
+          ? {
+              create: input.suggestedDishes.map((dish, idx) => ({
+                name: dish.name,
+                imageUrl: dish.imageUrl,
+                videoUrl: dish.videoUrl,
+                videoType: dish.videoUrl ? detectVideoType(dish.videoUrl) : undefined,
+                position: dish.position ?? idx,
+              })),
+            }
+          : undefined,
       },
       include: productInclude,
     })
@@ -217,7 +230,9 @@ export async function updateProduct(id: string, input: ProductUpdateInput) {
 
   const { product, removedImageUrls } = await prisma.$transaction(async (tx) => {
     if (input.variants) await syncVariants(tx, id, input.variants)
-    const removedImageUrls = input.images ? await syncImages(tx, id, input.images) : []
+    const removedProductImageUrls = input.images ? await syncImages(tx, id, input.images) : []
+    const removedDishImageUrls = input.suggestedDishes ? await syncSuggestedDishes(tx, id, input.suggestedDishes) : []
+    const removedImageUrls = [...removedProductImageUrls, ...removedDishImageUrls]
 
     const variants = await tx.productVariant.findMany({ where: { productId: id } })
     if (variants.length === 0) {
@@ -274,7 +289,10 @@ export async function hardDeleteProduct(id: string) {
     throw err
   }
 
-  await Promise.all(product.images.map(img => deleteImage(img.url)))
+  await Promise.all([
+    ...product.images.map(img => deleteImage(img.url)),
+    ...product.suggestedDishes.map(dish => deleteImage(dish.imageUrl)),
+  ])
 }
 
 async function syncVariants(tx: Prisma.TransactionClient, productId: string, variants: IncomingVariant[]) {
@@ -324,4 +342,36 @@ async function syncImages(tx: Prisma.TransactionClient, productId: string, image
   }
 
   return removed.map(r => r.url)
+}
+
+/**
+ * Mirrors syncImages, but a dish can also be *edited in place* (same id, new
+ * imageUrl) via the admin's "Sửa món" form — unlike ProductImage rows, which
+ * are only ever added/removed — so an id'd dish whose imageUrl changed also
+ * needs its old R2 object queued for cleanup, not just fully-removed dishes.
+ */
+async function syncSuggestedDishes(tx: Prisma.TransactionClient, productId: string, dishes: NonNullable<ProductUpdateInput['suggestedDishes']>) {
+  const existing = await tx.suggestedDish.findMany({ where: { productId }, select: { id: true, imageUrl: true } })
+  const keepIds = new Set(dishes.filter(d => d.id).map(d => d.id as string))
+  const removedImageUrls = existing.filter(d => !keepIds.has(d.id)).map(d => d.imageUrl)
+  await tx.suggestedDish.deleteMany({ where: { productId, id: { notIn: [...keepIds] } } })
+
+  for (const [idx, dish] of dishes.entries()) {
+    const data = {
+      name: dish.name,
+      imageUrl: dish.imageUrl ?? null,
+      videoUrl: dish.videoUrl ?? null,
+      videoType: dish.videoUrl ? detectVideoType(dish.videoUrl) : null,
+      position: dish.position ?? idx,
+    }
+    if (dish.id) {
+      const prev = existing.find(e => e.id === dish.id)
+      if (prev?.imageUrl && prev.imageUrl !== data.imageUrl) removedImageUrls.push(prev.imageUrl)
+      await tx.suggestedDish.update({ where: { id: dish.id }, data })
+    } else {
+      await tx.suggestedDish.create({ data: { ...data, productId } })
+    }
+  }
+
+  return removedImageUrls.filter((u): u is string => Boolean(u))
 }

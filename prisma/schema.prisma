@@ -61,6 +61,12 @@ enum PostType {
   RECIPE
 }
 
+enum SuggestedDishVideoType {
+  YOUTUBE
+  MP4
+  OTHER
+}
+
 // ---------------------------------------------------------------------------
 // User & Address
 // ---------------------------------------------------------------------------
@@ -171,14 +177,15 @@ model Product {
   avgRating   Float @default(0)
   reviewCount Int   @default(0)
 
-  categories Category[]
-  images     ProductImage[]
-  variants   ProductVariant[]
-  cartItems  CartItem[]
-  orderItems OrderItem[]
-  reviews    Review[]
-  wishlists  Wishlist[]
-  tags       Tag[]
+  categories      Category[]
+  images          ProductImage[]
+  variants        ProductVariant[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+  reviews         Review[]
+  wishlists       Wishlist[]
+  tags            Tag[]
+  suggestedDishes SuggestedDish[]
 
   @@index([slug])
   @@index([status])
@@ -186,6 +193,29 @@ model Product {
   @@index([soldCount])
   @@index([stock])
   @@map("products")
+}
+
+/// Món ăn gợi ý gắn với một sản phẩm (vd sản phẩm "Cá ngừ" gợi ý món "Cá ngừ áp
+/// chảo") — quản lý ngay trong trang Sửa sản phẩm admin, không có trang riêng.
+/// Chỉ 1 ảnh/món (giống Banner.imageUrl) vì UI chỉ cần 1 ảnh đại diện cho mỗi
+/// món, không cần một bảng ảnh con như ProductImage. videoUrl là link ngoài
+/// (YouTube/MP4) — không upload file video, videoType được suy ra tự động từ
+/// URL khi lưu (xem detectVideoType ở shared/utils/video.ts).
+model SuggestedDish {
+  id        String                  @id @default(cuid())
+  productId String
+  name      String
+  imageUrl  String?
+  videoUrl  String?
+  videoType SuggestedDishVideoType?
+  position  Int                     @default(0)
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("suggested_dishes")
 }
 
 model ProductImage {

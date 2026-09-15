@@ -276,6 +276,8 @@ useHead(() => ({
       </div>
     </div>
 
+    <StorefrontSuggestedDishes :dishes="product.suggestedDishes" />
+
     <StorefrontProductSection
       v-if="product.related.length"
       title="Sản phẩm liên quan"

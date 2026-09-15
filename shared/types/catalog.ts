@@ -1,3 +1,5 @@
+import type { SuggestedDishVideoType } from '../utils/video'
+
 export type CategoryDefaultSort = 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'name_asc' | 'stock_asc' | 'stock_desc'
 
 export interface Category {
@@ -39,6 +41,16 @@ export interface ProductImage {
 
 export type ProductStatus = 'ACTIVE' | 'INACTIVE'
 
+export interface SuggestedDish {
+  id: string
+  productId: string
+  name: string
+  imageUrl: string | null
+  videoUrl: string | null
+  videoType: SuggestedDishVideoType | null
+  position: number
+}
+
 export interface Tag {
   id: string
   name: string
@@ -66,6 +78,7 @@ export interface Product {
   images: ProductImage[]
   variants: ProductVariant[]
   tags: Tag[]
+  suggestedDishes: SuggestedDish[]
 }
 
 export interface ProductDetail extends Product {

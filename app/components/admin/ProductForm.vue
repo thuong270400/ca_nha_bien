@@ -130,6 +130,17 @@ function removeImage(index: number) {
   if (image && !image.id) deleteUploadedImage(image.url)
 }
 
+interface DishRow {
+  id?: string
+  name: string
+  imageUrl: string | null
+  videoUrl: string
+}
+
+const suggestedDishes = ref<DishRow[]>(
+  props.initial?.suggestedDishes.map(d => ({ id: d.id, name: d.name, imageUrl: d.imageUrl, videoUrl: d.videoUrl ?? '' })) ?? [],
+)
+
 const selectedTagIds = ref<string[]>(props.initial?.tags.map(t => t.id) ?? [])
 
 function toggleTag(id: string) {
@@ -157,6 +168,13 @@ function submit() {
       stock: v.stock,
       sku: v.sku || undefined,
       isDefault: v.isDefault,
+    })),
+    suggestedDishes: suggestedDishes.value.map((d, idx) => ({
+      id: d.id,
+      name: d.name,
+      imageUrl: d.imageUrl || undefined,
+      videoUrl: d.videoUrl || undefined,
+      position: idx,
     })),
   })
 }
@@ -268,6 +286,8 @@ function submit() {
         </div>
       </div>
     </UCard>
+
+    <AdminSuggestedDishManager v-model="suggestedDishes" />
 
     <UCard>
       <template #header>
