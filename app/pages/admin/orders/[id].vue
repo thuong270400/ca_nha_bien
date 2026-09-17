@@ -37,11 +37,25 @@ async function updateStatus(status: string) {
   }
 }
 
-const paymentMethodLabels: Record<string, string> = {
-  COD: 'Thanh toán khi nhận hàng (COD)',
-  VNPAY: 'VNPay',
-  MOMO: 'MoMo',
-  ZALOPAY: 'ZaloPay',
+const confirm = useConfirm()
+const confirmingPayment = ref(false)
+async function confirmPayment() {
+  const ok = await confirm({
+    title: 'Xác nhận đã nhận chuyển khoản?',
+    description: 'Đơn thường tự xác nhận qua webhook SePay — chỉ bấm tay khi đã kiểm tra tài khoản ngân hàng thực sự nhận được tiền cho đơn này mà hệ thống chưa tự cập nhật.',
+  })
+  if (!ok) return
+  confirmingPayment.value = true
+  try {
+    await $fetch(`/api/orders/${id}/confirm-payment`, { method: 'POST' })
+    toast.add({ title: 'Đã xác nhận thanh toán', color: 'success' })
+    await refresh()
+  } catch (err) {
+    const message = (err as { data?: { message?: string } })?.data?.message ?? 'Không thể xác nhận thanh toán'
+    toast.add({ title: 'Lỗi', description: message, color: 'error' })
+  } finally {
+    confirmingPayment.value = false
+  }
 }
 
 useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Biển Admin` })
@@ -104,13 +118,27 @@ useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Bi
       <div class="space-y-4">
         <UCard>
           <template #header>
-            <h2 class="font-semibold text-highlighted">
-              Thanh toán
-            </h2>
+            <div class="flex items-center justify-between gap-2">
+              <h2 class="font-semibold text-highlighted">
+                Thanh toán
+              </h2>
+              <UBadge :color="paymentStatusColors[order.paymentStatus]" variant="subtle">
+                {{ paymentStatusLabels[order.paymentStatus] }}
+              </UBadge>
+            </div>
           </template>
           <p class="text-sm text-muted">
             {{ paymentMethodLabels[order.paymentMethod] }}
           </p>
+          <UButton
+            v-if="order.paymentMethod === 'BANK_TRANSFER' && order.paymentStatus === 'PENDING'"
+            class="mt-3"
+            size="sm"
+            :loading="confirmingPayment"
+            @click="confirmPayment"
+          >
+            Xác nhận đã nhận chuyển khoản
+          </UButton>
           <div class="mt-3 space-y-2 text-sm">
             <div class="flex justify-between">
               <span class="text-muted">Tạm tính</span>

@@ -1,9 +1,11 @@
 import type { CreateOrderInput } from '#shared/schemas/order.schema'
+import type { SepayWebhookPayload } from '../utils/schemas/sepay.schema'
 import { validateCoupon } from './coupon.service'
+import { getBankSettings } from './setting.service'
 import { Prisma } from '../generated/prisma/client'
 import type { OrderStatus } from '../generated/prisma/enums'
 import { Errors } from '../utils/errors'
-import { generateOrderNumber } from '../utils/order-number'
+import { extractOrderNumber, generateOrderNumber } from '../utils/order-number'
 import { prisma } from '../utils/prisma'
 import { calculateShippingFee } from '../utils/shipping'
 
@@ -113,6 +115,15 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
     const shippingFee = await calculateShippingFee(subtotal, tx)
     const total = Math.max(subtotal - discountAmount, 0) + shippingFee
 
+    let bankSnapshot: Prisma.InputJsonValue | undefined
+    if (input.paymentMethod === 'BANK_TRANSFER') {
+      const bank = await getBankSettings(tx)
+      if (!bank.bankTransferEnabled || !bank.bankCode || !bank.bankAccountNumber) {
+        throw Errors.badRequest('Phương thức chuyển khoản ngân hàng hiện không khả dụng')
+      }
+      bankSnapshot = bank
+    }
+
     if (input.saveAddress && ctx.userId) {
       await tx.address.updateMany({ where: { userId: ctx.userId }, data: { isDefault: false } })
       await tx.address.create({
@@ -151,7 +162,7 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
         coupons: appliedCoupons.length
           ? { createMany: { data: appliedCoupons.map(c => ({ couponId: c.couponId, couponCode: c.couponCode, discountAmount: c.discountAmount.toFixed(2) })) } }
           : undefined,
-        payment: { create: { method: input.paymentMethod, amount: total.toFixed(2) } },
+        payment: { create: { method: input.paymentMethod, amount: total.toFixed(2), bankSnapshot } },
         shipping: { create: { fee: shippingFee.toFixed(2) } },
       },
       include: orderInclude,
@@ -213,4 +224,96 @@ export async function updateOrderStatus(id: string, status: OrderStatus) {
   const order = await prisma.order.findUnique({ where: { id } })
   if (!order) throw Errors.notFound('Không tìm thấy đơn hàng')
   return prisma.order.update({ where: { id }, data: { status }, include: orderInclude })
+}
+
+/**
+ * Atomic PENDING -> PAID transition shared by the admin manual-confirm button
+ * and the SePay webhook auto-confirm — mirrors the stock-decrement guard in
+ * attemptCreateOrder so a double-confirm (2 admin clicks, or a SePay retry
+ * arriving after we already settled) is a safe no-op instead of a race.
+ * Returns null if the payment had already left PENDING before this call.
+ */
+async function settlePayment(
+  payment: { id: string },
+  order: { id: string, status: OrderStatus },
+  opts: { paidAt: Date, transactionId?: string },
+) {
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.payment.updateMany({
+      where: { id: payment.id, status: 'PENDING' },
+      data: {
+        status: 'PAID',
+        paidAt: opts.paidAt,
+        ...(opts.transactionId ? { transactionId: opts.transactionId } : {}),
+      },
+    })
+    if (updated.count === 0) return null
+
+    return tx.order.update({
+      where: { id: order.id },
+      data: {
+        paymentStatus: 'PAID',
+        status: order.status === 'PENDING' ? 'CONFIRMED' : order.status,
+      },
+      include: orderInclude,
+    })
+  })
+}
+
+/**
+ * Admin xác nhận thủ công đã nhận chuyển khoản — fallback khi webhook SePay
+ * (confirmBankTransferPaymentFromSepay) không tự khớp được giao dịch (vd nội
+ * dung chuyển khoản bị khách xoá/sửa, sai số tiền).
+ */
+export async function confirmBankTransferPayment(id: string) {
+  const order = await prisma.order.findUnique({ where: { id }, include: { payment: true } })
+  if (!order || !order.payment) throw Errors.notFound('Không tìm thấy đơn hàng')
+  if (order.payment.method !== 'BANK_TRANSFER') throw Errors.badRequest('Đơn hàng này không sử dụng thanh toán chuyển khoản')
+  if (order.payment.status !== 'PENDING') throw Errors.badRequest('Đơn hàng đã được xử lý thanh toán')
+
+  const updated = await settlePayment(order.payment, order, { paidAt: new Date() })
+  if (!updated) throw Errors.conflict('Đơn hàng vừa được xử lý thanh toán ở nơi khác')
+  return updated
+}
+
+export type SepayMatchResult =
+  | { matched: true }
+  | { matched: false, reason: 'no-order-number-found' | 'order-not-found' | 'not-bank-transfer' | 'account-mismatch' | 'amount-mismatch' }
+
+/**
+ * Đối chiếu 1 giao dịch webhook SePay với đơn hàng và tự xác nhận thanh toán
+ * nếu khớp — thay cho việc admin phải tự kiểm tra tài khoản ngân hàng và bấm
+ * xác nhận thủ công. Đơn hàng được tìm qua mã đơn (ORD-YYYYMMDD-NNNN) trích
+ * từ `code` (SePay đã tách theo tiền tố cấu hình ở dashboard) hoặc từ
+ * `content`/`description` gốc của ngân hàng — rồi đối chiếu lại số tài khoản
+ * nhận tiền (snapshot lúc tạo đơn) và số tiền trước khi xác nhận, không tin
+ * riêng mã đơn. Không khớp được thì bỏ qua (log lại ở route gọi hàm này),
+ * admin vẫn xác nhận thủ công được qua confirmBankTransferPayment.
+ */
+export async function confirmBankTransferPaymentFromSepay(payload: SepayWebhookPayload): Promise<SepayMatchResult> {
+  const orderNumber = extractOrderNumber(payload.code) ?? extractOrderNumber(payload.content) ?? extractOrderNumber(payload.description)
+  if (!orderNumber) return { matched: false, reason: 'no-order-number-found' }
+
+  const order = await prisma.order.findUnique({ where: { orderNumber }, include: { payment: true } })
+  if (!order || !order.payment) return { matched: false, reason: 'order-not-found' }
+  if (order.paymentMethod !== 'BANK_TRANSFER') return { matched: false, reason: 'not-bank-transfer' }
+
+  const snapshot = order.payment.bankSnapshot as { bankAccountNumber?: string | null } | null
+  if (!snapshot?.bankAccountNumber || snapshot.bankAccountNumber !== payload.accountNumber) {
+    return { matched: false, reason: 'account-mismatch' }
+  }
+  if (Number(order.payment.amount) !== payload.transferAmount) {
+    return { matched: false, reason: 'amount-mismatch' }
+  }
+
+  // Đã PAID rồi (admin xác nhận tay trước, hoặc SePay gửi lại webhook) —
+  // vẫn coi là khớp, chỉ là không cần settlePayment nữa.
+  if (order.payment.status !== 'PENDING') return { matched: true }
+
+  const paidAt = new Date(payload.transactionDate.replace(' ', 'T') + '+07:00')
+  await settlePayment(order.payment, order, {
+    paidAt: Number.isNaN(paidAt.getTime()) ? new Date() : paidAt,
+    transactionId: `sepay:${payload.id}`,
+  })
+  return { matched: true }
 }

@@ -28,7 +28,7 @@ const form = reactive({
   note: '',
   addressId: undefined as string | undefined,
   saveAddress: false,
-  paymentMethod: 'COD' as const,
+  paymentMethod: 'COD' as 'COD' | 'BANK_TRANSFER',
 })
 
 const selectedAddressId = ref<string | undefined>(undefined)
@@ -148,7 +148,11 @@ async function submitOrder() {
     }
     const order = await $fetch('/api/orders', { method: 'POST', body: payload })
     await cartStore.fetchCart()
-    router.push(`/order/success?id=${order.id}`)
+    if (form.paymentMethod === 'BANK_TRANSFER') {
+      router.push(`/order/${order.id}`)
+    } else {
+      router.push(`/order/success?id=${order.id}`)
+    }
   } catch (err) {
     const message = (err as { data?: { message?: string } })?.data?.message ?? 'Không thể đặt hàng, vui lòng thử lại'
     toast.add({ title: 'Lỗi', description: message, color: 'error' })
@@ -221,9 +225,10 @@ useSeoMeta({ title: 'Thanh toán - Cá Nhà Biển' })
             Phương thức thanh toán
           </h2>
           <URadioGroup
-            :model-value="form.paymentMethod"
+            v-model="form.paymentMethod"
             :items="[
               { label: 'Thanh toán khi nhận hàng (COD)', value: 'COD' },
+              { label: 'Chuyển khoản ngân hàng (quét mã QR VietQR)', value: 'BANK_TRANSFER' },
               { label: 'VNPay (sắp ra mắt)', value: 'VNPAY', disabled: true },
               { label: 'MoMo (sắp ra mắt)', value: 'MOMO', disabled: true },
               { label: 'ZaloPay (sắp ra mắt)', value: 'ZALOPAY', disabled: true },

@@ -1,4 +1,26 @@
-import type { OrderStatus } from '#shared/types/order'
+import type { OrderStatus, PaymentMethod, PaymentStatus } from '#shared/types/order'
+
+export const paymentMethodLabels: Record<PaymentMethod, string> = {
+  COD: 'Thanh toán khi nhận hàng (COD)',
+  BANK_TRANSFER: 'Chuyển khoản ngân hàng (VietQR)',
+  VNPAY: 'VNPay',
+  MOMO: 'MoMo',
+  ZALOPAY: 'ZaloPay',
+}
+
+export const paymentStatusLabels: Record<PaymentStatus, string> = {
+  PENDING: 'Chờ thanh toán',
+  PAID: 'Đã thanh toán',
+  FAILED: 'Thanh toán thất bại',
+  REFUNDED: 'Đã hoàn tiền',
+}
+
+export const paymentStatusColors: Record<PaymentStatus, 'neutral' | 'warning' | 'success' | 'error'> = {
+  PENDING: 'warning',
+  PAID: 'success',
+  FAILED: 'error',
+  REFUNDED: 'neutral',
+}
 
 export const orderStatusLabels: Record<OrderStatus, string> = {
   PENDING: 'Chờ xác nhận',

@@ -69,6 +69,9 @@ useSeoMeta({ title: 'Đơn hàng - Cá Nhà Biển Admin' })
               Trạng thái
             </th>
             <th class="px-4 py-3">
+              Thanh toán
+            </th>
+            <th class="px-4 py-3">
               Ngày đặt
             </th>
             <th class="px-4 py-3" />
@@ -90,6 +93,11 @@ useSeoMeta({ title: 'Đơn hàng - Cá Nhà Biển Admin' })
                 {{ orderStatusLabels[order.status] }}
               </UBadge>
             </td>
+            <td class="px-4 py-3">
+              <UBadge :color="paymentStatusColors[order.paymentStatus]" variant="subtle">
+                {{ paymentStatusLabels[order.paymentStatus] }}
+              </UBadge>
+            </td>
             <td class="px-4 py-3 text-muted">
               {{ new Date(order.createdAt).toLocaleDateString('vi-VN') }}
             </td>
@@ -98,7 +106,7 @@ useSeoMeta({ title: 'Đơn hàng - Cá Nhà Biển Admin' })
             </td>
           </tr>
           <tr v-if="!data?.data.length">
-            <td colspan="6" class="px-4 py-10 text-center text-muted">
+            <td colspan="7" class="px-4 py-10 text-center text-muted">
               Không có đơn hàng nào
             </td>
           </tr>

@@ -1,6 +1,15 @@
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED'
-export type PaymentMethod = 'COD' | 'VNPAY' | 'MOMO' | 'ZALOPAY'
+export type PaymentMethod = 'COD' | 'BANK_TRANSFER' | 'VNPAY' | 'MOMO' | 'ZALOPAY'
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'
+
+/** Snapshot của thông tin ngân hàng (Setting) tại thời điểm tạo đơn — QR VietQR luôn dựng từ đây. */
+export interface PaymentBankSnapshot {
+  bankTransferEnabled: boolean
+  bankName: string | null
+  bankCode: string | null
+  bankAccountNumber: string | null
+  bankAccountName: string | null
+}
 
 export interface OrderItemView {
   id: string
@@ -22,6 +31,7 @@ export interface PaymentView {
   amount: string
   transactionId: string | null
   paidAt: string | null
+  bankSnapshot: PaymentBankSnapshot | null
 }
 
 export interface ShippingView {

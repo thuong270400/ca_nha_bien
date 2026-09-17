@@ -39,6 +39,7 @@ enum OrderStatus {
 
 enum PaymentMethod {
   COD
+  BANK_TRANSFER
   VNPAY
   MOMO
   ZALOPAY
@@ -396,10 +397,20 @@ model Payment {
   method        PaymentMethod
   status        PaymentStatus @default(PENDING)
   amount        Decimal       @db.Decimal(12, 2)
+  /// Mã tham chiếu tuỳ chọn: "sepay:<id giao dịch>" khi webhook SePay tự xác
+  /// nhận (xem confirmBankTransferPaymentFromSepay), null khi admin xác nhận
+  /// thủ công (confirmBankTransferPayment) — chỉ để tra cứu, không dùng để
+  /// chống trùng (chống trùng nằm ở guard PENDING->PAID trong settlePayment).
   transactionId String?
   paidAt        DateTime?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+
+  /// Snapshot thông tin ngân hàng (từ Setting) tại thời điểm tạo đơn — QR VietQR
+  /// hiển thị cho khách luôn dựng từ snapshot này (server/utils lẫn app/utils
+  /// đều đọc từ đây), không đọc lại Setting hiện tại, để đơn cũ không bị đổi
+  /// tài khoản nhận tiền khi admin sửa Setting sau này.
+  bankSnapshot Json?
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
@@ -521,12 +532,24 @@ model Coupon {
 // ---------------------------------------------------------------------------
 
 /// Singleton row (fixed id, see SETTINGS_ID in server/utils/shipping.ts) holding
-/// site-wide, admin-configurable settings — currently just shipping.
+/// site-wide, admin-configurable settings — shipping + payOS bank display info.
 model Setting {
-  id                    String   @id
-  shippingFee           Decimal  @default(50000) @db.Decimal(12, 2)
-  freeShippingThreshold Decimal  @default(500000) @db.Decimal(12, 2)
-  updatedAt             DateTime @updatedAt
+  id                    String  @id
+  shippingFee           Decimal @default(50000) @db.Decimal(12, 2)
+  freeShippingThreshold Decimal @default(500000) @db.Decimal(12, 2)
+
+  /// Tài khoản ngân hàng nhận tiền chuyển khoản (mã QR VietQR dựng trực tiếp từ
+  /// các field này, xem app/utils/vietqr.ts) — đổi ở đây đổi luôn nơi tiền chảy
+  /// vào cho đơn MỚI. Đơn cũ không bị ảnh hưởng nhờ Payment.bankSnapshot chụp
+  /// lại các field này tại thời điểm tạo đơn. bankCode là mã ngân hàng VietQR
+  /// (vd "VCB"), chọn từ danh sách GET /api/admin/settings/banks.
+  bankTransferEnabled Boolean @default(false)
+  bankName            String?
+  bankCode            String?
+  bankAccountNumber   String?
+  bankAccountName     String?
+
+  updatedAt DateTime @updatedAt
 
   @@map("settings")
 }
