@@ -89,9 +89,14 @@ useSeoMeta({ title: 'Đơn hàng - Cá Nhà Biển Admin' })
               {{ formatVnd(order.total) }}
             </td>
             <td class="px-4 py-3">
-              <UBadge :color="orderStatusColors[order.status]">
-                {{ orderStatusLabels[order.status] }}
-              </UBadge>
+              <div class="flex flex-wrap items-center gap-1">
+                <UBadge :color="orderStatusColors[order.status]">
+                  {{ orderStatusLabels[order.status] }}
+                </UBadge>
+                <UBadge v-if="order.depositPercent" color="warning" variant="subtle">
+                  Cọc {{ order.depositPercent }}%
+                </UBadge>
+              </div>
             </td>
             <td class="px-4 py-3">
               <UBadge :color="paymentStatusColors[order.paymentStatus]" variant="subtle">

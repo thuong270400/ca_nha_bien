@@ -187,6 +187,7 @@ model Product {
   wishlists       Wishlist[]
   tags            Tag[]
   suggestedDishes SuggestedDish[]
+  sourcingOptions ProductSourcingOption[]
 
   @@index([slug])
   @@index([status])
@@ -217,6 +218,39 @@ model SuggestedDish {
 
   @@index([productId])
   @@map("suggested_dishes")
+}
+
+/// Phân loại nguồn cá tuỳ chỉnh cho một sản phẩm (vd "Có sẵn", "Theo mùa/chuyến",
+/// "Đặc biệt") — quản lý ngay trong trang Sửa sản phẩm admin, cùng pattern với
+/// SuggestedDish (sync theo id, không có trang riêng). Đây chỉ là dữ liệu mô tả/
+/// logistics (KHÔNG có giá riêng — giá bán vẫn luôn là ProductVariant.price, để
+/// tránh 2 nơi cùng khai báo giá gây nhầm lẫn); depositPercent là % dự kiến hiển
+/// thị cho khách/admin tham khảo, không trừ vào Payment.amount nào cả — xem
+/// order.service.ts#attemptCreateOrder (Order.depositPercent/estimatedAvailabilityDays).
+model ProductSourcingOption {
+  id        String   @id @default(cuid())
+  productId String
+  label     String
+  /// Mô tả quy trình lấy cá (vd đánh bắt, thời điểm ra khơi...)
+  catchProcess String? @db.Text
+  /// Thời gian dự kiến có cá — chuỗi tự do (vd "3-5 ngày sau khi đặt cọc") vì
+  /// phụ thuộc thời tiết/chuyến đi, không phải một khoảng thời gian cố định.
+  expectedAvailability String?
+  /// Số ngày dự kiến (vd 5, ứng với vế dài nhất của expectedAvailability) — nhập
+  /// tay riêng vì expectedAvailability là chuỗi tự do không thể suy luận số ra
+  /// được. Dùng để so sánh/tính Order.estimatedAvailabilityDays khi tạo đơn
+  /// (order.service.ts#attemptCreateOrder), không hiển thị trực tiếp cho khách.
+  expectedAvailabilityDays Int?
+  /// % cọc trước, 0-100 — null nghĩa là không yêu cầu cọc.
+  depositPercent Int?
+  position Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_sourcing_options")
 }
 
 model ProductImage {
@@ -326,6 +360,18 @@ model Order {
   /// giá nhưng có thể áp nhiều mã ở nhiều danh mục khác nhau cùng lúc), tính một
   /// lần khi tạo đơn, mirror của pattern denormalize Product.stock.
   discountAmount Decimal @default(0) @db.Decimal(12, 2)
+
+  /// % cọc cao nhất trong số ProductSourcingOption của mọi sản phẩm trong đơn —
+  /// null/0 nghĩa là không có sản phẩm nào cần cọc. Tính một lần khi tạo đơn
+  /// (order.service.ts#attemptCreateOrder), chỉ là cờ đánh dấu để admin/khách
+  /// biết cần liên hệ xác nhận cọc — KHÔNG tự động đổi Payment.amount, đơn vẫn
+  /// thu đủ total như bình thường (chưa có luồng thanh toán một phần).
+  depositPercent Int?
+
+  /// Số ngày dự kiến giao hàng dài nhất trong số ProductSourcingOption.expectedAvailabilityDays
+  /// của mọi sản phẩm trong đơn — null nghĩa là không sản phẩm nào khai báo. Cùng
+  /// pattern denormalize-tại-thời-điểm-tạo-đơn như depositPercent ở trên.
+  estimatedAvailabilityDays Int?
 
   // Snapshot thông tin giao hàng tại thời điểm đặt (độc lập với Address gốc)
   recipientName  String

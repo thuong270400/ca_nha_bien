@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Product } from '#shared/types/catalog'
+import { resolvePrimarySourcingOption } from '#shared/utils/sourcing'
 
 const props = withDefaults(defineProps<{ product: Product, index?: number }>(), { index: 0 })
 
@@ -38,6 +39,11 @@ async function onToggleWishlist() {
 
 const imageTags = computed(() => product.value.tags.filter(t => t.showOnImage))
 const labelTags = computed(() => product.value.tags.filter(t => !t.showOnImage))
+// "Longest wait" among this product's sourcing options (or the "hàng có sẵn"
+// default when none are configured) — same logic used to derive
+// Order.estimatedAvailabilityDays, so the card sets the same expectation the
+// customer will see confirmed at checkout.
+const primarySourcingOption = computed(() => resolvePrimarySourcingOption(product.value.sourcingOptions))
 const defaultVariant = computed(() => product.value.variants.find(v => v.isDefault) ?? product.value.variants[0])
 const coverImage = computed(() => product.value.images[0]?.url ?? '/images/placeholder-fish.svg')
 const hoverImage = computed(() => product.value.images[1]?.url ?? null)
@@ -166,6 +172,10 @@ onUnmounted(stopShineLoop)
           {{ tag.name }}
         </span>
       </div>
+      <p v-if="primarySourcingOption?.expectedAvailability" class="flex items-center gap-1 text-[11px] text-muted">
+        <UIcon name="i-lucide-clock" class="size-3 shrink-0" />
+        <span class="truncate">Dự kiến: {{ primarySourcingOption.expectedAvailability }}</span>
+      </p>
       <div class="mt-auto flex items-end justify-between gap-2 pt-2">
         <div class="min-w-0 flex-1">
           <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">

@@ -60,6 +60,14 @@ useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Bi
               <span class="font-medium">{{ formatVnd(item.lineTotal) }}</span>
             </div>
           </div>
+          <p v-if="order.depositPercent" class="mt-4 flex items-start gap-2 rounded-lg bg-warning/10 p-3 text-sm text-warning">
+            <UIcon name="i-lucide-circle-alert" class="mt-0.5 size-4 shrink-0" />
+            <span>Đơn hàng có sản phẩm cần đặt cọc trước tối đa {{ order.depositPercent }}%, chúng tôi sẽ liên hệ để xác nhận cọc.</span>
+          </p>
+          <p v-if="order.estimatedAvailabilityDays" class="mt-2 flex items-center gap-2 text-sm text-muted">
+            <UIcon name="i-lucide-clock" class="size-4 shrink-0" />
+            <span>Dự kiến giao hàng trong khoảng {{ order.estimatedAvailabilityDays }} ngày</span>
+          </p>
         </div>
 
         <div class="rounded-xl border border-default p-5">

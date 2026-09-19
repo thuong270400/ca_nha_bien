@@ -26,6 +26,15 @@ interface ImageRow {
   alt: string
 }
 
+interface SourcingOptionRow {
+  id?: string
+  label: string
+  catchProcess: string
+  expectedAvailability: string
+  expectedAvailabilityDays: number | undefined
+  depositPercent: number | undefined
+}
+
 const form = reactive({
   name: props.initial?.name ?? '',
   slug: props.initial?.slug ?? '',
@@ -141,6 +150,17 @@ const suggestedDishes = ref<DishRow[]>(
   props.initial?.suggestedDishes.map(d => ({ id: d.id, name: d.name, imageUrl: d.imageUrl, videoUrl: d.videoUrl ?? '' })) ?? [],
 )
 
+const sourcingOptions = ref<SourcingOptionRow[]>(
+  props.initial?.sourcingOptions.map(o => ({
+    id: o.id,
+    label: o.label,
+    catchProcess: o.catchProcess ?? '',
+    expectedAvailability: o.expectedAvailability ?? '',
+    expectedAvailabilityDays: o.expectedAvailabilityDays ?? undefined,
+    depositPercent: o.depositPercent ?? undefined,
+  })) ?? [],
+)
+
 const selectedTagIds = ref<string[]>(props.initial?.tags.map(t => t.id) ?? [])
 
 function toggleTag(id: string) {
@@ -174,6 +194,15 @@ function submit() {
       name: d.name,
       imageUrl: d.imageUrl || undefined,
       videoUrl: d.videoUrl || undefined,
+      position: idx,
+    })),
+    sourcingOptions: sourcingOptions.value.map((o, idx) => ({
+      id: o.id,
+      label: o.label,
+      catchProcess: o.catchProcess || undefined,
+      expectedAvailability: o.expectedAvailability || undefined,
+      expectedAvailabilityDays: o.expectedAvailabilityDays,
+      depositPercent: o.depositPercent,
       position: idx,
     })),
   })
@@ -340,6 +369,8 @@ function submit() {
         </div>
       </div>
     </UCard>
+
+    <AdminSourcingOptionManager v-model="sourcingOptions" />
 
     <div class="flex justify-end gap-3">
       <UButton color="neutral" variant="outline" :disabled="loading" @click="emit('cancel')">

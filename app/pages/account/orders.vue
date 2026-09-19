@@ -47,6 +47,9 @@ useSeoMeta({ title: 'Đơn hàng của tôi - Cá Nhà Biển' })
             </div>
             <div class="flex items-center gap-3">
               <span class="font-semibold text-primary">{{ formatVnd(order.total) }}</span>
+              <UBadge v-if="order.depositPercent" color="warning" variant="subtle">
+                Cọc {{ order.depositPercent }}%
+              </UBadge>
               <UBadge :color="orderStatusColors[order.status]">
                 {{ orderStatusLabels[order.status] }}
               </UBadge>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Product, ProductDetail } from '#shared/types/catalog'
+import { DEFAULT_AVAILABILITY_TEXT } from '#shared/utils/sourcing'
 
 const route = useRoute()
 const slug = route.params.slug as string
@@ -202,6 +203,10 @@ useHead(() => ({
             -{{ discountPercent }}%
           </UBadge>
         </div>
+        <p v-if="!product.sourcingOptions.length" class="mt-2 flex items-center gap-1.5 text-sm text-muted">
+          <UIcon name="i-lucide-clock" class="size-4" />
+          <span>Hàng có sẵn — giao trong {{ DEFAULT_AVAILABILITY_TEXT }}, thanh toán đủ khi nhận hàng, không cần đặt cọc</span>
+        </p>
 
         <div class="mt-6">
           <p class="mb-2 text-sm font-medium text-highlighted">
@@ -272,6 +277,28 @@ useHead(() => ({
           <p class="whitespace-pre-line text-sm text-muted">
             {{ product.description }}
           </p>
+        </div>
+
+        <div v-if="product.sourcingOptions.length" class="mt-8 border-t border-default pt-6">
+          <h2 class="mb-3 font-semibold text-highlighted">
+            Phân loại nguồn cá
+          </h2>
+          <div class="space-y-3">
+            <div v-for="opt in product.sourcingOptions" :key="opt.id" class="rounded-lg border border-default p-3">
+              <p class="font-medium text-highlighted">
+                {{ opt.label }}
+              </p>
+              <p v-if="opt.catchProcess" class="mt-1 whitespace-pre-line text-sm text-muted">
+                {{ opt.catchProcess }}
+              </p>
+              <p v-if="opt.expectedAvailability" class="mt-2 flex items-center gap-1 text-xs text-muted">
+                <UIcon name="i-lucide-clock" class="size-3.5" /> Dự kiến có cá: {{ opt.expectedAvailability }}
+              </p>
+              <p v-if="opt.depositPercent" class="mt-1 flex items-center gap-1 text-xs text-warning">
+                <UIcon name="i-lucide-circle-alert" class="size-3.5" /> Cần đặt cọc trước {{ opt.depositPercent }}%
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

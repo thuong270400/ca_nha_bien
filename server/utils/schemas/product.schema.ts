@@ -26,6 +26,16 @@ export const productImageSchema = z.object({
 
 export const productStatusSchema = z.enum(['ACTIVE', 'INACTIVE'])
 
+export const productSourcingOptionSchema = z.object({
+  id: z.string().optional(),
+  label: z.string().trim().min(1, 'Tên phân loại không được để trống').max(100),
+  catchProcess: z.string().trim().max(2000).optional(),
+  expectedAvailability: z.string().trim().max(200).optional(),
+  expectedAvailabilityDays: z.coerce.number().int().min(0).optional(),
+  depositPercent: z.coerce.number().int().min(0).max(100).optional(),
+  position: z.number().int().optional(),
+})
+
 export const suggestedDishSchema = z.object({
   id: z.string().optional(),
   name: z.string().trim().min(1, 'Tên món không được để trống').max(200),
@@ -46,6 +56,7 @@ export const productCreateSchema = z.object({
   variants: z.array(productVariantSchema).min(1, 'Cần ít nhất 1 biến thể (đơn vị bán)'),
   tagIds: z.array(z.string()).optional(),
   suggestedDishes: z.array(suggestedDishSchema).optional(),
+  sourcingOptions: z.array(productSourcingOptionSchema).optional(),
 })
 
 export const productUpdateSchema = productCreateSchema.partial().extend({

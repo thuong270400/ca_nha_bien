@@ -31,6 +31,17 @@ export interface ProductVariant {
   isDefault: boolean
 }
 
+export interface ProductSourcingOption {
+  id: string
+  productId: string
+  label: string
+  catchProcess: string | null
+  expectedAvailability: string | null
+  expectedAvailabilityDays: number | null
+  depositPercent: number | null
+  position: number
+}
+
 export interface ProductImage {
   id: string
   productId: string
@@ -79,6 +90,7 @@ export interface Product {
   variants: ProductVariant[]
   tags: Tag[]
   suggestedDishes: SuggestedDish[]
+  sourcingOptions: ProductSourcingOption[]
 }
 
 export interface ProductDetail extends Product {

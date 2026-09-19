@@ -60,6 +60,10 @@ export interface OrderView {
   shippingFee: string
   total: string
   discountAmount: string
+  /** % cọc cao nhất trong đơn — null/0 nghĩa là không có sản phẩm nào cần cọc. Chỉ là cờ đánh dấu, không đổi `total`/`payment.amount`. */
+  depositPercent: number | null
+  /** Số ngày dự kiến giao hàng dài nhất trong đơn — null nghĩa là không sản phẩm nào khai báo. */
+  estimatedAvailabilityDays: number | null
   paymentMethod: PaymentMethod
   paymentStatus: PaymentStatus
   recipientName: string

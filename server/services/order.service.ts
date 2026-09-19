@@ -1,4 +1,5 @@
 import type { CreateOrderInput } from '#shared/schemas/order.schema'
+import { sourcingContribution } from '#shared/utils/sourcing'
 import type { SepayWebhookPayload } from '../utils/schemas/sepay.schema'
 import { validateCoupon } from './coupon.service'
 import { getBankSettings } from './setting.service'
@@ -47,12 +48,19 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
   return prisma.$transaction(async (tx) => {
     const cart = await tx.cart.findUnique({
       where: { id: ctx.cartId },
-      include: { items: { include: { variant: true, product: true } } },
+      include: { items: { include: { variant: true, product: { include: { sourcingOptions: true } } } } },
     })
     if (!cart || cart.items.length === 0) throw Errors.badRequest('Giỏ hàng đang trống')
 
     let subtotal = 0
     const orderItemsData: Prisma.OrderItemCreateManyOrderInput[] = []
+    // Cờ đánh dấu đơn, lấy giá trị "xấu nhất" (cọc cao nhất / chờ lâu nhất) trong
+    // số ProductSourcingOption của mọi sản phẩm trong giỏ — không có cơ chế cho
+    // khách chọn 1 phân loại cụ thể khi mua, nên dùng max để không đánh giá thấp
+    // yêu cầu cọc/thời gian chờ thực tế. Không đổi Payment.amount/total. Sản phẩm
+    // chưa gắn phân loại nào đóng góp mức mặc định "hàng có sẵn" (xem sourcingContribution).
+    let depositPercent: number | null = null
+    let estimatedAvailabilityDays: number | null = null
 
     for (const item of cart.items) {
       if (item.product.deletedAt || item.product.status !== 'ACTIVE') {
@@ -69,6 +77,14 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
         quantity: item.quantity,
         lineTotal: lineTotal.toFixed(2),
       })
+
+      const contribution = sourcingContribution(item.product.sourcingOptions)
+      if (contribution.depositPercent > 0 && (depositPercent === null || contribution.depositPercent > depositPercent)) {
+        depositPercent = contribution.depositPercent
+      }
+      if (contribution.availabilityDays > 0 && (estimatedAvailabilityDays === null || contribution.availabilityDays > estimatedAvailabilityDays)) {
+        estimatedAvailabilityDays = contribution.availabilityDays
+      }
     }
 
     for (const item of cart.items) {
@@ -149,6 +165,8 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
         shippingFee: shippingFee.toFixed(2),
         total: total.toFixed(2),
         discountAmount: discountAmount.toFixed(2),
+        depositPercent,
+        estimatedAvailabilityDays,
         paymentMethod: input.paymentMethod,
         recipientName: input.recipientName,
         recipientPhone: input.recipientPhone,
