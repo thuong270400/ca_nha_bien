@@ -1,10 +1,10 @@
 import type { CreateOrderInput } from '#shared/schemas/order.schema'
-import { sourcingContribution } from '#shared/utils/sourcing'
+import { resolveAvailabilityWindow } from '#shared/utils/sourcing'
 import type { SepayWebhookPayload } from '../utils/schemas/sepay.schema'
 import { validateCoupon } from './coupon.service'
-import { getBankSettings } from './setting.service'
+import { getBankSettings, getDepositSettings } from './setting.service'
 import { Prisma } from '../generated/prisma/client'
-import type { OrderStatus } from '../generated/prisma/enums'
+import type { OrderStatus, PaymentStatus } from '../generated/prisma/enums'
 import { Errors } from '../utils/errors'
 import { extractOrderNumber, generateOrderNumber } from '../utils/order-number'
 import { prisma } from '../utils/prisma'
@@ -48,18 +48,18 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
   return prisma.$transaction(async (tx) => {
     const cart = await tx.cart.findUnique({
       where: { id: ctx.cartId },
-      include: { items: { include: { variant: true, product: { include: { sourcingOptions: true } } } } },
+      include: { items: { include: { variant: true, product: { include: { sourcingClassification: true } } } } },
     })
     if (!cart || cart.items.length === 0) throw Errors.badRequest('Giỏ hàng đang trống')
 
     let subtotal = 0
     const orderItemsData: Prisma.OrderItemCreateManyOrderInput[] = []
-    // Cờ đánh dấu đơn, lấy giá trị "xấu nhất" (cọc cao nhất / chờ lâu nhất) trong
-    // số ProductSourcingOption của mọi sản phẩm trong giỏ — không có cơ chế cho
-    // khách chọn 1 phân loại cụ thể khi mua, nên dùng max để không đánh giá thấp
-    // yêu cầu cọc/thời gian chờ thực tế. Không đổi Payment.amount/total. Sản phẩm
-    // chưa gắn phân loại nào đóng góp mức mặc định "hàng có sẵn" (xem sourcingContribution).
-    let depositPercent: number | null = null
+    // Thời gian giao dự kiến của đơn (deliveryMode = SINGLE) = "xấu nhất" (chờ
+    // lâu nhất) trong số khoảng ngày dự kiến có cá của mọi sản phẩm trong giỏ,
+    // dùng max để không đánh giá thấp thời gian chờ thực tế. Sản phẩm chưa chọn
+    // phân loại nào đóng góp mức mặc định "hàng có sẵn" (xem resolveAvailabilityWindow).
+    // Khoảng của từng item cũng được snapshot vào OrderItem để nhóm đợt giao khi
+    // khách chọn deliveryMode = SPLIT (xem groupByAvailabilityWindow).
     let estimatedAvailabilityDays: number | null = null
 
     for (const item of cart.items) {
@@ -68,6 +68,7 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
       }
       const lineTotal = Number(item.variant.price) * item.quantity
       subtotal += lineTotal
+      const { fromDays, toDays } = resolveAvailabilityWindow(item.product.sourcingClassification)
       orderItemsData.push({
         productId: item.productId,
         variantId: item.variantId,
@@ -76,16 +77,20 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
         price: item.variant.price,
         quantity: item.quantity,
         lineTotal: lineTotal.toFixed(2),
+        availabilityFromDays: fromDays,
+        availabilityToDays: toDays,
       })
 
-      const contribution = sourcingContribution(item.product.sourcingOptions)
-      if (contribution.depositPercent > 0 && (depositPercent === null || contribution.depositPercent > depositPercent)) {
-        depositPercent = contribution.depositPercent
-      }
-      if (contribution.availabilityDays > 0 && (estimatedAvailabilityDays === null || contribution.availabilityDays > estimatedAvailabilityDays)) {
-        estimatedAvailabilityDays = contribution.availabilityDays
+      if (toDays > 0 && (estimatedAvailabilityDays === null || toDays > estimatedAvailabilityDays)) {
+        estimatedAvailabilityDays = toDays
       }
     }
+
+    // % cọc áp dụng chung cho mọi sản phẩm (Setting.depositPercent, cấu hình ở
+    // trang Cài đặt) — snapshot vào Order.depositPercent, không đổi theo khi
+    // admin sửa cài đặt sau này. Không đổi Payment.amount/total.
+    const { depositPercent: globalDepositPercent } = await getDepositSettings(tx)
+    const depositPercent = globalDepositPercent > 0 ? globalDepositPercent : null
 
     for (const item of cart.items) {
       const result = await tx.productVariant.updateMany({
@@ -132,12 +137,20 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
     const total = Math.max(subtotal - discountAmount, 0) + shippingFee
 
     let bankSnapshot: Prisma.InputJsonValue | undefined
+    // % cọc chỉ thu trước thật (giảm số tiền trên QR) với BANK_TRANSFER — COD
+    // không có cơ chế thu trước khi giao, nên vẫn chỉ là cờ đánh dấu như cũ.
+    // depositPercent >= 100 coi như không tách cọc (thu đủ luôn, còn lại = 0
+    // thì tách 2 bước không có ý nghĩa gì).
+    let depositAmount: number | null = null
     if (input.paymentMethod === 'BANK_TRANSFER') {
       const bank = await getBankSettings(tx)
       if (!bank.bankTransferEnabled || !bank.bankCode || !bank.bankAccountNumber) {
         throw Errors.badRequest('Phương thức chuyển khoản ngân hàng hiện không khả dụng')
       }
       bankSnapshot = bank
+      if (depositPercent && depositPercent < 100) {
+        depositAmount = Math.round(total * depositPercent / 100)
+      }
     }
 
     if (input.saveAddress && ctx.userId) {
@@ -167,6 +180,7 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
         discountAmount: discountAmount.toFixed(2),
         depositPercent,
         estimatedAvailabilityDays,
+        deliveryMode: input.deliveryMode,
         paymentMethod: input.paymentMethod,
         recipientName: input.recipientName,
         recipientPhone: input.recipientPhone,
@@ -180,7 +194,7 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
         coupons: appliedCoupons.length
           ? { createMany: { data: appliedCoupons.map(c => ({ couponId: c.couponId, couponCode: c.couponCode, discountAmount: c.discountAmount.toFixed(2) })) } }
           : undefined,
-        payment: { create: { method: input.paymentMethod, amount: total.toFixed(2), bankSnapshot } },
+        payment: { create: { method: input.paymentMethod, amount: total.toFixed(2), depositAmount: depositAmount !== null ? depositAmount.toFixed(2) : undefined, bankSnapshot } },
         shipping: { create: { fee: shippingFee.toFixed(2) } },
       },
       include: orderInclude,
@@ -244,24 +258,46 @@ export async function updateOrderStatus(id: string, status: OrderStatus) {
   return prisma.order.update({ where: { id }, data: { status }, include: orderInclude })
 }
 
+type SettleablePayment = { id: string, status: PaymentStatus, amount: Prisma.Decimal, depositAmount: Prisma.Decimal | null }
+
 /**
- * Atomic PENDING -> PAID transition shared by the admin manual-confirm button
- * and the SePay webhook auto-confirm — mirrors the stock-decrement guard in
- * attemptCreateOrder so a double-confirm (2 admin clicks, or a SePay retry
- * arriving after we already settled) is a safe no-op instead of a race.
- * Returns null if the payment had already left PENDING before this call.
+ * Đơn có tách cọc (Payment.depositAmount != null) xác nhận theo 2 bước tuần tự:
+ * PENDING -> DEPOSIT_PAID (nhận đủ tiền cọc) -> PAID (nhận đủ phần còn lại).
+ * Đơn không tách cọc chỉ có 1 bước PENDING -> PAID như cũ. Trả về null nếu
+ * payment đã ở bước cuối (PAID) hoặc ở trạng thái không xác nhận được (FAILED/
+ * REFUNDED) — không có bước tiếp theo.
+ */
+function resolveNextPaymentStep(payment: Pick<SettleablePayment, 'status' | 'depositAmount'>): { toStatus: 'DEPOSIT_PAID' | 'PAID', expectedAmount: (p: SettleablePayment) => number } | null {
+  if (payment.status === 'PENDING') {
+    return payment.depositAmount !== null
+      ? { toStatus: 'DEPOSIT_PAID', expectedAmount: p => Number(p.depositAmount) }
+      : { toStatus: 'PAID', expectedAmount: p => Number(p.amount) }
+  }
+  if (payment.status === 'DEPOSIT_PAID') {
+    return { toStatus: 'PAID', expectedAmount: p => Number(p.amount) - Number(p.depositAmount ?? 0) }
+  }
+  return null
+}
+
+/**
+ * Atomic transition (PENDING -> DEPOSIT_PAID hoặc PENDING/DEPOSIT_PAID -> PAID)
+ * dùng chung bởi nút xác nhận thủ công của admin và webhook SePay tự động —
+ * mirrors the stock-decrement guard in attemptCreateOrder so a double-confirm
+ * (2 admin clicks, hoặc SePay gửi lại webhook) là no-op an toàn thay vì race.
+ * Trả về null nếu payment đã rời khỏi `fromStatus` trước khi hàm này chạy.
  */
 async function settlePayment(
-  payment: { id: string },
+  payment: { id: string, status: PaymentStatus },
   order: { id: string, status: OrderStatus },
-  opts: { paidAt: Date, transactionId?: string },
+  toStatus: 'DEPOSIT_PAID' | 'PAID',
+  opts: { at: Date, transactionId?: string },
 ) {
   return prisma.$transaction(async (tx) => {
     const updated = await tx.payment.updateMany({
-      where: { id: payment.id, status: 'PENDING' },
+      where: { id: payment.id, status: payment.status },
       data: {
-        status: 'PAID',
-        paidAt: opts.paidAt,
+        status: toStatus,
+        ...(toStatus === 'DEPOSIT_PAID' ? { depositPaidAt: opts.at } : { paidAt: opts.at }),
         ...(opts.transactionId ? { transactionId: opts.transactionId } : {}),
       },
     })
@@ -270,7 +306,7 @@ async function settlePayment(
     return tx.order.update({
       where: { id: order.id },
       data: {
-        paymentStatus: 'PAID',
+        paymentStatus: toStatus,
         status: order.status === 'PENDING' ? 'CONFIRMED' : order.status,
       },
       include: orderInclude,
@@ -281,15 +317,18 @@ async function settlePayment(
 /**
  * Admin xác nhận thủ công đã nhận chuyển khoản — fallback khi webhook SePay
  * (confirmBankTransferPaymentFromSepay) không tự khớp được giao dịch (vd nội
- * dung chuyển khoản bị khách xoá/sửa, sai số tiền).
+ * dung chuyển khoản bị khách xoá/sửa, sai số tiền). Tự nhận diện đang ở bước
+ * cọc hay bước còn lại dựa vào status hiện tại (xem resolveNextPaymentStep).
  */
 export async function confirmBankTransferPayment(id: string) {
   const order = await prisma.order.findUnique({ where: { id }, include: { payment: true } })
   if (!order || !order.payment) throw Errors.notFound('Không tìm thấy đơn hàng')
   if (order.payment.method !== 'BANK_TRANSFER') throw Errors.badRequest('Đơn hàng này không sử dụng thanh toán chuyển khoản')
-  if (order.payment.status !== 'PENDING') throw Errors.badRequest('Đơn hàng đã được xử lý thanh toán')
 
-  const updated = await settlePayment(order.payment, order, { paidAt: new Date() })
+  const step = resolveNextPaymentStep(order.payment)
+  if (!step) throw Errors.badRequest('Đơn hàng đã được xử lý thanh toán')
+
+  const updated = await settlePayment(order.payment, order, step.toStatus, { at: new Date() })
   if (!updated) throw Errors.conflict('Đơn hàng vừa được xử lý thanh toán ở nơi khác')
   return updated
 }
@@ -305,8 +344,10 @@ export type SepayMatchResult =
  * từ `code` (SePay đã tách theo tiền tố cấu hình ở dashboard) hoặc từ
  * `content`/`description` gốc của ngân hàng — rồi đối chiếu lại số tài khoản
  * nhận tiền (snapshot lúc tạo đơn) và số tiền trước khi xác nhận, không tin
- * riêng mã đơn. Không khớp được thì bỏ qua (log lại ở route gọi hàm này),
- * admin vẫn xác nhận thủ công được qua confirmBankTransferPayment.
+ * riêng mã đơn. Đơn có tách cọc (Payment.depositAmount) đối chiếu số tiền theo
+ * đúng bước hiện tại (cọc trước, hay phần còn lại — xem resolveNextPaymentStep)
+ * chứ không so với `amount` đầy đủ. Không khớp được thì bỏ qua (log lại ở route
+ * gọi hàm này), admin vẫn xác nhận thủ công được qua confirmBankTransferPayment.
  */
 export async function confirmBankTransferPaymentFromSepay(payload: SepayWebhookPayload): Promise<SepayMatchResult> {
   const orderNumber = extractOrderNumber(payload.code) ?? extractOrderNumber(payload.content) ?? extractOrderNumber(payload.description)
@@ -320,17 +361,20 @@ export async function confirmBankTransferPaymentFromSepay(payload: SepayWebhookP
   if (!snapshot?.bankAccountNumber || snapshot.bankAccountNumber !== payload.accountNumber) {
     return { matched: false, reason: 'account-mismatch' }
   }
-  if (Number(order.payment.amount) !== payload.transferAmount) {
+
+  // Đã xử lý xong bước cuối (PAID) rồi, hoặc ở trạng thái FAILED/REFUNDED — vẫn
+  // coi là khớp (admin xác nhận tay trước, hoặc SePay gửi lại webhook), chỉ là
+  // không cần settlePayment nữa.
+  const step = resolveNextPaymentStep(order.payment)
+  if (!step) return { matched: true }
+
+  if (step.expectedAmount(order.payment) !== payload.transferAmount) {
     return { matched: false, reason: 'amount-mismatch' }
   }
 
-  // Đã PAID rồi (admin xác nhận tay trước, hoặc SePay gửi lại webhook) —
-  // vẫn coi là khớp, chỉ là không cần settlePayment nữa.
-  if (order.payment.status !== 'PENDING') return { matched: true }
-
   const paidAt = new Date(payload.transactionDate.replace(' ', 'T') + '+07:00')
-  await settlePayment(order.payment, order, {
-    paidAt: Number.isNaN(paidAt.getTime()) ? new Date() : paidAt,
+  await settlePayment(order.payment, order, step.toStatus, {
+    at: Number.isNaN(paidAt.getTime()) ? new Date() : paidAt,
     transactionId: `sepay:${payload.id}`,
   })
   return { matched: true }

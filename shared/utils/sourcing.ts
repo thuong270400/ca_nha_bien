@@ -1,49 +1,80 @@
 /**
- * Sản phẩm chưa gắn phân loại nguồn cá nào (ProductSourcingOption) thì mặc định
- * coi là "hàng có sẵn": thanh toán đủ 100% (không cọc), giao trong 1-2 ngày.
- * Dùng chung cho hiển thị storefront (ProductCard, trang chi tiết sản phẩm) và
- * tính Order.depositPercent/estimatedAvailabilityDays khi tạo đơn.
+ * Sản phẩm chưa chọn phân loại nguồn cá nào (SourcingClassification) thì mặc
+ * định coi là "hàng có sẵn": giao trong 1-2 ngày. Dùng chung cho hiển thị
+ * storefront (ProductCard, trang chi tiết sản phẩm) và tính
+ * Order.estimatedAvailabilityDays/nhóm đợt giao khi tạo đơn. Mức cọc (nếu có)
+ * không theo từng phân loại — xem Setting.depositPercent, áp dụng chung cho mọi
+ * sản phẩm.
  */
 export const DEFAULT_SOURCING_LABEL = 'Có sẵn'
-export const DEFAULT_AVAILABILITY_TEXT = '1-2 ngày'
-export const DEFAULT_AVAILABILITY_DAYS = 2
-export const DEFAULT_DEPOSIT_PERCENT = 0
+export const DEFAULT_AVAILABILITY_FROM_DAYS = 1
+export const DEFAULT_AVAILABILITY_TO_DAYS = 2
 
-interface SourcingOptionLike {
-  label: string
-  expectedAvailability: string | null
-  expectedAvailabilityDays: number | null
-  depositPercent: number | null
+interface SourcingClassificationLike {
+  name: string
+  availabilityFromDays: number | null
+  availabilityToDays: number | null
 }
 
-/** Phân loại "đại diện" cho hiển thị (card, trang chi tiết) — lấy phân loại có
- * thời gian dự kiến dài nhất nếu sản phẩm có khai báo, hoặc mặc định "Có sẵn"
- * nếu chưa khai báo phân loại nào. */
-export function resolvePrimarySourcingOption<T extends SourcingOptionLike>(options: T[]): SourcingOptionLike {
-  if (!options.length) {
+/** "1-2 ngày" nếu from khác to, "2 ngày" nếu bằng nhau hoặc chỉ có 1 vế, null nếu không có dữ liệu. */
+export function formatDayRange(fromDays: number | null | undefined, toDays: number | null | undefined): string | null {
+  if (fromDays == null && toDays == null) return null
+  if (fromDays == null) return `${toDays} ngày`
+  if (toDays == null || toDays === fromDays) return `${fromDays} ngày`
+  return `${fromDays}-${toDays} ngày`
+}
+
+/** Phân loại nguồn cá của sản phẩm (đã chọn, hay mặc định "Có sẵn" nếu sản phẩm
+ * chưa chọn phân loại nào) — dùng để hiển thị (card, trang chi tiết). */
+export function resolveSourcingClassification<T extends SourcingClassificationLike>(classification: T | null | undefined): SourcingClassificationLike {
+  if (!classification) {
     return {
-      label: DEFAULT_SOURCING_LABEL,
-      expectedAvailability: DEFAULT_AVAILABILITY_TEXT,
-      expectedAvailabilityDays: DEFAULT_AVAILABILITY_DAYS,
-      depositPercent: DEFAULT_DEPOSIT_PERCENT,
+      name: DEFAULT_SOURCING_LABEL,
+      availabilityFromDays: DEFAULT_AVAILABILITY_FROM_DAYS,
+      availabilityToDays: DEFAULT_AVAILABILITY_TO_DAYS,
     }
   }
-  return [...options].sort((a, b) => (b.expectedAvailabilityDays ?? -1) - (a.expectedAvailabilityDays ?? -1))[0]!
+  return classification
 }
 
-/** Mức đóng góp của 1 sản phẩm vào cọc/thời gian giao dự kiến chung của cả đơn
- * (order.service.ts lấy max qua mọi sản phẩm trong giỏ) — sản phẩm chưa khai
- * báo phân loại nào đóng góp mức mặc định (0% cọc, 2 ngày), sản phẩm đã khai
- * báo thì lấy max trong chính các phân loại của nó (không cộng thêm mặc định). */
-export function sourcingContribution<T extends SourcingOptionLike>(options: T[]): { depositPercent: number, availabilityDays: number } {
-  if (!options.length) {
-    return { depositPercent: DEFAULT_DEPOSIT_PERCENT, availabilityDays: DEFAULT_AVAILABILITY_DAYS }
+/** Khoảng ngày dự kiến có cá của 1 sản phẩm trong giỏ/đơn — dùng làm khoá nhóm
+ * đợt giao khi khách chọn "giao nhiều lần" ở checkout (2 sản phẩm cùng khoảng
+ * (from,to) thì cùng 1 đợt) và để tính Order.estimatedAvailabilityDays khi
+ * "giao 1 lần" (lấy "to" lớn nhất trong giỏ ở nơi gọi hàm này). */
+export function resolveAvailabilityWindow<T extends SourcingClassificationLike>(classification: T | null | undefined): { fromDays: number, toDays: number } {
+  const resolved = resolveSourcingClassification(classification)
+  const toDays = resolved.availabilityToDays ?? resolved.availabilityFromDays ?? DEFAULT_AVAILABILITY_TO_DAYS
+  const fromDays = resolved.availabilityFromDays ?? toDays
+  return { fromDays, toDays }
+}
+
+interface AvailabilityWindowLike {
+  availabilityFromDays: number | null
+  availabilityToDays: number | null
+}
+
+export interface AvailabilityGroup<T> {
+  fromDays: number
+  toDays: number
+  items: T[]
+}
+
+/** Gộp các item (CartItem/OrderItem) có cùng khoảng ngày dự kiến có cá vào 1 đợt
+ * giao — dùng khi khách chọn "giao nhiều lần". Item thiếu dữ liệu (đơn cũ trước
+ * khi có tính năng này) dùng mức mặc định "hàng có sẵn". Sắp xếp theo "to" tăng
+ * dần (đợt có hàng sớm nhất trước). */
+export function groupByAvailabilityWindow<T extends AvailabilityWindowLike>(items: T[]): AvailabilityGroup<T>[] {
+  const groups = new Map<string, AvailabilityGroup<T>>()
+  for (const item of items) {
+    const fromDays = item.availabilityFromDays ?? DEFAULT_AVAILABILITY_FROM_DAYS
+    const toDays = item.availabilityToDays ?? DEFAULT_AVAILABILITY_TO_DAYS
+    const key = `${fromDays}-${toDays}`
+    const group = groups.get(key)
+    if (group) {
+      group.items.push(item)
+    } else {
+      groups.set(key, { fromDays, toDays, items: [item] })
+    }
   }
-  let depositPercent = 0
-  let availabilityDays = 0
-  for (const opt of options) {
-    if (opt.depositPercent && opt.depositPercent > depositPercent) depositPercent = opt.depositPercent
-    if (opt.expectedAvailabilityDays && opt.expectedAvailabilityDays > availabilityDays) availabilityDays = opt.expectedAvailabilityDays
-  }
-  return { depositPercent, availabilityDays }
+  return [...groups.values()].sort((a, b) => a.toDays - b.toDays || a.fromDays - b.fromDays)
 }

@@ -50,6 +50,9 @@ useSeoMeta({ title: 'Đơn hàng của tôi - Cá Nhà Biển' })
               <UBadge v-if="order.depositPercent" color="warning" variant="subtle">
                 Cọc {{ order.depositPercent }}%
               </UBadge>
+              <UBadge v-if="order.deliveryMode === 'SPLIT'" color="primary" variant="subtle">
+                Giao nhiều lần
+              </UBadge>
               <UBadge :color="orderStatusColors[order.status]">
                 {{ orderStatusLabels[order.status] }}
               </UBadge>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { Category } from '#shared/types/catalog'
+import type { Category, SourcingClassification } from '#shared/types/catalog'
 import type { CouponCategoryView } from '#shared/types/coupon'
+import { formatDayRange } from '#shared/utils/sourcing'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -10,6 +11,7 @@ const confirm = useConfirm()
 const tabItems = [
   { label: 'Danh mục sản phẩm', value: 'products' },
   { label: 'Danh mục mã giảm giá', value: 'coupons' },
+  { label: 'Phân loại nguồn cá', value: 'sourcing' },
 ]
 const activeTab = ref<string | number>('products')
 
@@ -259,6 +261,120 @@ async function moveCc(category: CouponCategoryView, direction: 'up' | 'down') {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Phân loại nguồn cá
+// ---------------------------------------------------------------------------
+
+const { data: sourcingClassifications, refresh: refreshSourcing } = await useFetch<SourcingClassification[]>('/api/sourcing-classifications', { key: 'admin-sourcing-classifications-full' })
+
+const scOpen = ref(false)
+const scSaving = ref(false)
+const scEditing = ref<SourcingClassification | null>(null)
+const scForm = reactive({
+  name: '',
+  slug: '',
+  catchProcess: '',
+  availabilityFromDays: undefined as number | undefined,
+  availabilityToDays: undefined as number | undefined,
+  position: 0,
+})
+const scSlugTouched = ref(false)
+
+watch(() => scForm.name, (name) => {
+  if (!scSlugTouched.value) scForm.slug = slugify(name)
+})
+
+function openScCreate() {
+  scEditing.value = null
+  scForm.name = ''
+  scForm.slug = ''
+  scForm.catchProcess = ''
+  scForm.availabilityFromDays = undefined
+  scForm.availabilityToDays = undefined
+  scForm.position = Math.max(0, ...(sourcingClassifications.value ?? []).map(c => c.position)) + 1
+  scSlugTouched.value = false
+  scOpen.value = true
+}
+
+function openScEdit(item: SourcingClassification) {
+  scEditing.value = item
+  scForm.name = item.name
+  scForm.slug = item.slug
+  scForm.catchProcess = item.catchProcess ?? ''
+  scForm.availabilityFromDays = item.availabilityFromDays ?? undefined
+  scForm.availabilityToDays = item.availabilityToDays ?? undefined
+  scForm.position = item.position
+  scSlugTouched.value = true
+  scOpen.value = true
+}
+
+async function saveSc() {
+  scSaving.value = true
+  try {
+    const payload = {
+      name: scForm.name,
+      slug: scForm.slug,
+      catchProcess: scForm.catchProcess || undefined,
+      availabilityFromDays: scForm.availabilityFromDays,
+      availabilityToDays: scForm.availabilityToDays,
+      position: scForm.position,
+    }
+    if (scEditing.value) {
+      await $fetch(`/api/sourcing-classifications/${scEditing.value.id}`, { method: 'PATCH', body: payload })
+    } else {
+      await $fetch('/api/sourcing-classifications', { method: 'POST', body: payload })
+    }
+    toast.add({ title: 'Đã lưu phân loại', color: 'success' })
+    scOpen.value = false
+    await refreshSourcing()
+  } catch (err) {
+    const message = (err as { data?: { message?: string } })?.data?.message ?? 'Không thể lưu phân loại'
+    toast.add({ title: 'Lỗi', description: message, color: 'error' })
+  } finally {
+    scSaving.value = false
+  }
+}
+
+const scDeletingId = ref<string | null>(null)
+async function removeSc(item: SourcingClassification) {
+  const ok = await confirm({ title: `Xoá phân loại "${item.name}"?`, description: 'Sản phẩm đang chọn phân loại này sẽ về lại mặc định "Có sẵn".' })
+  if (!ok) return
+  scDeletingId.value = item.id
+  try {
+    await $fetch(`/api/sourcing-classifications/${item.id}`, { method: 'DELETE' })
+    toast.add({ title: 'Đã xoá phân loại', color: 'success' })
+    await refreshSourcing()
+  } catch (err) {
+    const message = (err as { data?: { message?: string } })?.data?.message ?? 'Không thể xoá phân loại'
+    toast.add({ title: 'Lỗi', description: message, color: 'error' })
+  } finally {
+    scDeletingId.value = null
+  }
+}
+
+const scReorderingId = ref<string | null>(null)
+async function moveSc(item: SourcingClassification, direction: 'up' | 'down') {
+  const list = sourcingClassifications.value ?? []
+  const index = list.findIndex(c => c.id === item.id)
+  const targetIndex = direction === 'up' ? index - 1 : index + 1
+  const target = list[targetIndex]
+  if (!target) return
+
+  scReorderingId.value = item.id
+  try {
+    await Promise.all([
+      $fetch(`/api/sourcing-classifications/${item.id}`, { method: 'PATCH', body: { position: target.position } }),
+      $fetch(`/api/sourcing-classifications/${target.id}`, { method: 'PATCH', body: { position: item.position } }),
+    ])
+    await refreshSourcing()
+  } catch (err) {
+    const message = (err as { data?: { message?: string } })?.data?.message ?? 'Không thể thay đổi thứ tự'
+    toast.add({ title: 'Lỗi', description: message, color: 'error' })
+  } finally {
+    scReorderingId.value = null
+  }
+}
+
 useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
 </script>
 
@@ -268,8 +384,11 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
       <h1 class="text-xl font-bold text-highlighted">
         Danh mục
       </h1>
-      <UButton icon="i-lucide-plus" @click="activeTab === 'products' ? openCreate() : openCcCreate()">
-        {{ activeTab === 'products' ? 'Thêm danh mục' : 'Thêm danh mục mã giảm giá' }}
+      <UButton
+        icon="i-lucide-plus"
+        @click="activeTab === 'products' ? openCreate() : activeTab === 'coupons' ? openCcCreate() : openScCreate()"
+      >
+        {{ activeTab === 'products' ? 'Thêm danh mục' : activeTab === 'coupons' ? 'Thêm danh mục mã giảm giá' : 'Thêm phân loại' }}
       </UButton>
     </div>
 
@@ -372,7 +491,7 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
       </table>
     </div>
 
-    <div v-else class="overflow-x-auto rounded-xl border border-default">
+    <div v-else-if="activeTab === 'coupons'" class="overflow-x-auto rounded-xl border border-default">
       <table class="w-full text-sm">
         <thead class="bg-elevated text-left text-xs uppercase text-muted">
           <tr>
@@ -450,6 +569,82 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
       </table>
     </div>
 
+    <div v-else class="overflow-x-auto rounded-xl border border-default">
+      <table class="w-full text-sm">
+        <thead class="bg-elevated text-left text-xs uppercase text-muted">
+          <tr>
+            <th class="px-4 py-3">
+              Thứ tự
+            </th>
+            <th class="px-4 py-3">
+              Tên
+            </th>
+            <th class="px-4 py-3">
+              Slug
+            </th>
+            <th class="px-4 py-3">
+              Dự kiến có cá
+            </th>
+            <th class="px-4 py-3" />
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-default">
+          <tr v-for="(item, i) in sourcingClassifications ?? []" :key="item.id">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-1">
+                <span class="w-6 text-muted">{{ item.position }}</span>
+                <UButton
+                  icon="i-lucide-chevron-up"
+                  size="xs"
+                  variant="ghost"
+                  color="neutral"
+                  :disabled="i === 0"
+                  :loading="scReorderingId === item.id"
+                  @click="moveSc(item, 'up')"
+                />
+                <UButton
+                  icon="i-lucide-chevron-down"
+                  size="xs"
+                  variant="ghost"
+                  color="neutral"
+                  :disabled="i === (sourcingClassifications?.length ?? 0) - 1"
+                  :loading="scReorderingId === item.id"
+                  @click="moveSc(item, 'down')"
+                />
+              </div>
+            </td>
+            <td class="px-4 py-3 font-medium text-highlighted">
+              {{ item.name }}
+            </td>
+            <td class="px-4 py-3 text-muted">
+              {{ item.slug }}
+            </td>
+            <td class="px-4 py-3 text-muted">
+              {{ formatDayRange(item.availabilityFromDays, item.availabilityToDays) ?? '—' }}
+            </td>
+            <td class="px-4 py-3 text-right">
+              <div class="flex justify-end gap-2">
+                <UButton icon="i-lucide-pencil" size="sm" variant="ghost" @click="openScEdit(item)" />
+                <UButton
+                  icon="i-lucide-trash-2"
+                  size="sm"
+                  variant="ghost"
+                  color="error"
+                  :loading="scDeletingId === item.id"
+                  @click="removeSc(item)"
+                />
+              </div>
+            </td>
+          </tr>
+          <tr v-if="!sourcingClassifications?.length">
+            <td colspan="5" class="px-4 py-10 text-center text-muted">
+              Chưa có phân loại nào
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <UModal v-model:open="open" :title="editing ? 'Sửa danh mục' : 'Thêm danh mục'">
       <template #body>
         <div class="space-y-4">
@@ -521,6 +716,43 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
             Huỷ
           </UButton>
           <UButton :loading="ccSaving" @click="saveCc">
+            Lưu
+          </UButton>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="scOpen" :title="scEditing ? 'Sửa phân loại' : 'Thêm phân loại'">
+      <template #body>
+        <div class="space-y-4">
+          <UFormField label="Tên phân loại" required>
+            <UInput v-model="scForm.name" placeholder="Vd: Có sẵn, Theo mùa/chuyến, Đặc biệt..." class="w-full" />
+          </UFormField>
+          <UFormField label="Slug" required>
+            <UInput v-model="scForm.slug" class="w-full" @input="scSlugTouched = true" />
+          </UFormField>
+          <UFormField label="Mô tả quy trình lấy cá" hint="Vd: đánh bắt ngoài khơi, chuyển về trong ngày...">
+            <UTextarea v-model="scForm.catchProcess" :rows="3" class="w-full" />
+          </UFormField>
+          <UFormField label="Ngày dự kiến có cá" hint="Khoảng ngày kể từ lúc đặt hàng tới khi có cá — vd từ 3 đến 5 ngày. Dùng để nhóm đợt giao khi khách chọn giao nhiều lần ở checkout.">
+            <div class="flex items-center gap-2">
+              <UInputNumber v-model="scForm.availabilityFromDays" :min="0" placeholder="Từ" class="w-full" />
+              <span class="shrink-0 text-sm text-muted">đến</span>
+              <UInputNumber v-model="scForm.availabilityToDays" :min="0" placeholder="Đến" class="w-full" />
+              <span class="shrink-0 text-sm text-muted">ngày</span>
+            </div>
+          </UFormField>
+          <UFormField label="Thứ tự hiển thị" description="Số nhỏ hơn hiển thị trước">
+            <UInputNumber v-model="scForm.position" :min="0" />
+          </UFormField>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <UButton color="neutral" variant="outline" @click="scOpen = false">
+            Huỷ
+          </UButton>
+          <UButton :loading="scSaving" @click="saveSc">
             Lưu
           </UButton>
         </div>

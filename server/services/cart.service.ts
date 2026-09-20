@@ -1,3 +1,4 @@
+import { resolveAvailabilityWindow } from '#shared/utils/sourcing'
 import { Prisma } from '../generated/prisma/client'
 import { Errors } from '../utils/errors'
 import { prisma } from '../utils/prisma'
@@ -12,6 +13,7 @@ const cartItemInclude = {
       status: true,
       deletedAt: true,
       images: { take: 1, orderBy: { position: 'asc' as const } },
+      sourcingClassification: true,
     },
   },
   variant: true,
@@ -34,6 +36,7 @@ async function summarizeCart(cart: { id: string, items: Prisma.CartItemGetPayloa
     const available = item.variant.stock >= item.quantity
       && item.product.status === 'ACTIVE'
       && !item.product.deletedAt
+    const { fromDays, toDays } = resolveAvailabilityWindow(item.product.sourcingClassification)
     return {
       id: item.id,
       productId: item.productId,
@@ -44,6 +47,8 @@ async function summarizeCart(cart: { id: string, items: Prisma.CartItemGetPayloa
       lineTotal: (price * item.quantity).toFixed(2),
       stock: item.variant.stock,
       available,
+      availabilityFromDays: fromDays,
+      availabilityToDays: toDays,
       product: {
         id: item.product.id,
         name: item.product.name,

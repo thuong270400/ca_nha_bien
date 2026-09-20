@@ -16,6 +16,11 @@ export const createOrderSchema = z.object({
   // COD and BANK_TRANSFER (VietQR bank-transfer QR) are wired up; the schema/enum
   // already support VNPAY/MOMO/ZALOPAY for later.
   paymentMethod: z.enum(['COD', 'BANK_TRANSFER']).default('COD'),
+  // Only meaningful when the cart has items with different expected-availability
+  // windows (see shared/utils/sourcing.ts#groupByAvailabilityWindow) — harmless
+  // no-op otherwise (single group either way). SINGLE: one bill/one delivery,
+  // using the latest window. SPLIT: customer wants separate batches per window.
+  deliveryMode: z.enum(['SINGLE', 'SPLIT']).default('SINGLE'),
 })
 
 export const orderStatusUpdateSchema = z.object({

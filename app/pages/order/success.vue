@@ -30,7 +30,7 @@ useSeoMeta({ title: 'Đặt hàng thành công - Cá Nhà Biển' })
       {{ formatVnd(order.total) }}
     </p>
     <p v-if="order?.depositPercent" class="mt-3 max-w-md text-sm text-warning">
-      Đơn hàng có sản phẩm cần đặt cọc trước tối đa {{ order.depositPercent }}%, chúng tôi sẽ liên hệ để xác nhận cọc.
+      Đơn hàng cần đặt cọc trước {{ order.depositPercent }}%, chúng tôi sẽ liên hệ để xác nhận cọc.
     </p>
 
     <div class="mt-6 flex gap-3">

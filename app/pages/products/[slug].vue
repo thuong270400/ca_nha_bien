@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Product, ProductDetail } from '#shared/types/catalog'
-import { DEFAULT_AVAILABILITY_TEXT } from '#shared/utils/sourcing'
+import type { DeliverySettingView } from '#shared/types/setting'
+import { DEFAULT_AVAILABILITY_FROM_DAYS, DEFAULT_AVAILABILITY_TO_DAYS, formatDayRange } from '#shared/utils/sourcing'
 
 const route = useRoute()
 const slug = route.params.slug as string
@@ -12,6 +13,11 @@ const { data: product } = await useFetch<ProductDetail>(`/api/products/slug/${sl
 if (!product.value) {
   throw createError({ statusCode: 404, statusMessage: 'Không tìm thấy sản phẩm', fatal: true })
 }
+
+// Khoảng ngày dự kiến giao hàng — chung cho mọi sản phẩm, cấu hình ở Cài đặt
+// admin (không còn theo từng phân loại nguồn cá nữa).
+const { data: deliverySetting } = await useFetch<DeliverySettingView>('/api/settings/delivery', { key: 'delivery-setting' })
+const deliveryRangeText = computed(() => formatDayRange(deliverySetting.value?.deliveryFromDays, deliverySetting.value?.deliveryToDays))
 
 const selectedImageIndex = ref(0)
 const selectedVariantId = ref(
@@ -203,9 +209,13 @@ useHead(() => ({
             -{{ discountPercent }}%
           </UBadge>
         </div>
-        <p v-if="!product.sourcingOptions.length" class="mt-2 flex items-center gap-1.5 text-sm text-muted">
+        <p v-if="!product.sourcingClassification" class="mt-2 flex items-center gap-1.5 text-sm text-muted">
           <UIcon name="i-lucide-clock" class="size-4" />
-          <span>Hàng có sẵn — giao trong {{ DEFAULT_AVAILABILITY_TEXT }}, thanh toán đủ khi nhận hàng, không cần đặt cọc</span>
+          <span>Hàng có sẵn — giao trong {{ formatDayRange(DEFAULT_AVAILABILITY_FROM_DAYS, DEFAULT_AVAILABILITY_TO_DAYS) }}, thanh toán đủ khi nhận hàng, không cần đặt cọc</span>
+        </p>
+        <p v-if="deliveryRangeText" class="mt-2 flex items-center gap-1.5 text-sm text-muted">
+          <UIcon name="i-lucide-truck" class="size-4" />
+          <span>Thời gian dự kiến giao hàng: {{ deliveryRangeText }}</span>
         </p>
 
         <div class="mt-6">
@@ -279,25 +289,20 @@ useHead(() => ({
           </p>
         </div>
 
-        <div v-if="product.sourcingOptions.length" class="mt-8 border-t border-default pt-6">
+        <div v-if="product.sourcingClassification" class="mt-8 border-t border-default pt-6">
           <h2 class="mb-3 font-semibold text-highlighted">
             Phân loại nguồn cá
           </h2>
-          <div class="space-y-3">
-            <div v-for="opt in product.sourcingOptions" :key="opt.id" class="rounded-lg border border-default p-3">
-              <p class="font-medium text-highlighted">
-                {{ opt.label }}
-              </p>
-              <p v-if="opt.catchProcess" class="mt-1 whitespace-pre-line text-sm text-muted">
-                {{ opt.catchProcess }}
-              </p>
-              <p v-if="opt.expectedAvailability" class="mt-2 flex items-center gap-1 text-xs text-muted">
-                <UIcon name="i-lucide-clock" class="size-3.5" /> Dự kiến có cá: {{ opt.expectedAvailability }}
-              </p>
-              <p v-if="opt.depositPercent" class="mt-1 flex items-center gap-1 text-xs text-warning">
-                <UIcon name="i-lucide-circle-alert" class="size-3.5" /> Cần đặt cọc trước {{ opt.depositPercent }}%
-              </p>
-            </div>
+          <div class="rounded-lg border border-default p-3">
+            <p class="font-medium text-highlighted">
+              {{ product.sourcingClassification.name }}
+            </p>
+            <p v-if="product.sourcingClassification.catchProcess" class="mt-1 whitespace-pre-line text-sm text-muted">
+              {{ product.sourcingClassification.catchProcess }}
+            </p>
+            <p v-if="formatDayRange(product.sourcingClassification.availabilityFromDays, product.sourcingClassification.availabilityToDays)" class="mt-2 flex items-center gap-1 text-xs text-muted">
+              <UIcon name="i-lucide-clock" class="size-3.5" /> Dự kiến có cá: {{ formatDayRange(product.sourcingClassification.availabilityFromDays, product.sourcingClassification.availabilityToDays) }}
+            </p>
           </div>
         </div>
       </div>

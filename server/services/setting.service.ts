@@ -22,9 +22,35 @@ export async function getBankSettings(client: SettingClient = prisma) {
   }
 }
 
+/**
+ * % cọc trước áp dụng chung cho mọi sản phẩm/loại cá — dùng để snapshot vào
+ * Order.depositPercent lúc tạo đơn (order.service.ts#attemptCreateOrder). Nhận
+ * `client` tuỳ chọn để đọc được bên trong cùng $transaction tạo đơn, mirror
+ * getBankSettings ở trên.
+ */
+export async function getDepositSettings(client: SettingClient = prisma) {
+  const setting = await client.setting.findUnique({ where: { id: SETTINGS_ID } })
+  return { depositPercent: setting?.depositPercent ?? 0 }
+}
+
+/**
+ * Khoảng ngày dự kiến giao hàng áp dụng chung cho MỌI sản phẩm — thay cho việc
+ * khai báo theo từng SourcingClassification trước đây. Chỉ để hiển thị mô tả
+ * cho khách (GET /api/settings/delivery, trang sản phẩm), không dùng trong bất
+ * kỳ tính toán nào — availability (dùng để nhóm đợt giao) vẫn nằm trên
+ * SourcingClassification, không đổi.
+ */
+export async function getDeliverySettings(client: SettingClient = prisma) {
+  const setting = await client.setting.findUnique({ where: { id: SETTINGS_ID } })
+  return {
+    deliveryFromDays: setting?.deliveryFromDays ?? null,
+    deliveryToDays: setting?.deliveryToDays ?? null,
+  }
+}
+
 export async function getSettings() {
-  const [shipping, bank] = await Promise.all([getShippingSettings(), getBankSettings()])
-  return { ...shipping, ...bank }
+  const [shipping, bank, deposit, delivery] = await Promise.all([getShippingSettings(), getBankSettings(), getDepositSettings(), getDeliverySettings()])
+  return { ...shipping, ...bank, ...deposit, ...delivery }
 }
 
 export async function updateSettings(input: SettingUpdateInput) {

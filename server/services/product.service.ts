@@ -25,7 +25,7 @@ export const productInclude = {
   variants: { orderBy: { price: 'asc' as const } },
   tags: true,
   suggestedDishes: { orderBy: { position: 'asc' as const } },
-  sourcingOptions: { orderBy: { position: 'asc' as const } },
+  sourcingClassification: true,
 } satisfies Prisma.ProductInclude
 
 type IncomingVariant = ProductCreateInput['variants'][number]
@@ -190,6 +190,7 @@ export async function createProduct(input: ProductCreateInput) {
         origin: input.origin,
         status: input.status ?? 'ACTIVE',
         isFeatured: input.isFeatured ?? false,
+        sourcingClassificationId: input.sourcingClassificationId ?? undefined,
         categories: { connect: input.categoryIds.map(id => ({ id })) },
         price: defaultVariant.price,
         compareAtPrice: defaultVariant.compareAtPrice,
@@ -219,18 +220,6 @@ export async function createProduct(input: ProductCreateInput) {
               })),
             }
           : undefined,
-        sourcingOptions: input.sourcingOptions?.length
-          ? {
-              create: input.sourcingOptions.map((opt, idx) => ({
-                label: opt.label,
-                catchProcess: opt.catchProcess,
-                expectedAvailability: opt.expectedAvailability,
-                expectedAvailabilityDays: opt.expectedAvailabilityDays,
-                depositPercent: opt.depositPercent,
-                position: opt.position ?? idx,
-              })),
-            }
-          : undefined,
       },
       include: productInclude,
     })
@@ -246,7 +235,6 @@ export async function updateProduct(id: string, input: ProductUpdateInput) {
     const removedProductImageUrls = input.images ? await syncImages(tx, id, input.images) : []
     const removedDishImageUrls = input.suggestedDishes ? await syncSuggestedDishes(tx, id, input.suggestedDishes) : []
     const removedImageUrls = [...removedProductImageUrls, ...removedDishImageUrls]
-    if (input.sourcingOptions) await syncSourcingOptions(tx, id, input.sourcingOptions)
 
     const variants = await tx.productVariant.findMany({ where: { productId: id } })
     if (variants.length === 0) {
@@ -267,6 +255,7 @@ export async function updateProduct(id: string, input: ProductUpdateInput) {
         status: input.status,
         deletedAt: input.status === 'ACTIVE' ? null : undefined,
         isFeatured: input.isFeatured,
+        sourcingClassificationId: input.sourcingClassificationId,
         categories: input.categoryIds ? { set: input.categoryIds.map(id => ({ id })) } : undefined,
         price: defaultVariant.price,
         compareAtPrice: defaultVariant.compareAtPrice,
@@ -388,25 +377,4 @@ async function syncSuggestedDishes(tx: Prisma.TransactionClient, productId: stri
   }
 
   return removedImageUrls.filter((u): u is string => Boolean(u))
-}
-
-async function syncSourcingOptions(tx: Prisma.TransactionClient, productId: string, options: NonNullable<ProductUpdateInput['sourcingOptions']>) {
-  const keepIds = options.filter(o => o.id).map(o => o.id as string)
-  await tx.productSourcingOption.deleteMany({ where: { productId, id: { notIn: keepIds } } })
-
-  for (const [idx, option] of options.entries()) {
-    const data = {
-      label: option.label,
-      catchProcess: option.catchProcess ?? null,
-      expectedAvailability: option.expectedAvailability ?? null,
-      expectedAvailabilityDays: option.expectedAvailabilityDays ?? null,
-      depositPercent: option.depositPercent ?? null,
-      position: option.position ?? idx,
-    }
-    if (option.id) {
-      await tx.productSourcingOption.update({ where: { id: option.id }, data })
-    } else {
-      await tx.productSourcingOption.create({ data: { ...data, productId } })
-    }
-  }
 }

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import type { Category, Product, Tag } from '#shared/types/catalog'
+import type { Category, Product, SourcingClassification, Tag } from '#shared/types/catalog'
 
 const props = defineProps<{
   categories: Category[]
   tags: Tag[]
+  sourcingClassifications: SourcingClassification[]
   initial?: Product
   loading?: boolean
 }>()
@@ -24,15 +25,6 @@ interface ImageRow {
   id?: string
   url: string
   alt: string
-}
-
-interface SourcingOptionRow {
-  id?: string
-  label: string
-  catchProcess: string
-  expectedAvailability: string
-  expectedAvailabilityDays: number | undefined
-  depositPercent: number | undefined
 }
 
 const form = reactive({
@@ -150,23 +142,18 @@ const suggestedDishes = ref<DishRow[]>(
   props.initial?.suggestedDishes.map(d => ({ id: d.id, name: d.name, imageUrl: d.imageUrl, videoUrl: d.videoUrl ?? '' })) ?? [],
 )
 
-const sourcingOptions = ref<SourcingOptionRow[]>(
-  props.initial?.sourcingOptions.map(o => ({
-    id: o.id,
-    label: o.label,
-    catchProcess: o.catchProcess ?? '',
-    expectedAvailability: o.expectedAvailability ?? '',
-    expectedAvailabilityDays: o.expectedAvailabilityDays ?? undefined,
-    depositPercent: o.depositPercent ?? undefined,
-  })) ?? [],
-)
-
 const selectedTagIds = ref<string[]>(props.initial?.tags.map(t => t.id) ?? [])
 
 function toggleTag(id: string) {
   selectedTagIds.value = selectedTagIds.value.includes(id)
     ? selectedTagIds.value.filter(t => t !== id)
     : [...selectedTagIds.value, id]
+}
+
+const sourcingClassificationId = ref<string | undefined>(props.initial?.sourcingClassificationId ?? undefined)
+
+function toggleSourcingClassification(id: string) {
+  sourcingClassificationId.value = sourcingClassificationId.value === id ? undefined : id
 }
 
 function submit() {
@@ -196,15 +183,7 @@ function submit() {
       videoUrl: d.videoUrl || undefined,
       position: idx,
     })),
-    sourcingOptions: sourcingOptions.value.map((o, idx) => ({
-      id: o.id,
-      label: o.label,
-      catchProcess: o.catchProcess || undefined,
-      expectedAvailability: o.expectedAvailability || undefined,
-      expectedAvailabilityDays: o.expectedAvailabilityDays,
-      depositPercent: o.depositPercent,
-      position: idx,
-    })),
+    sourcingClassificationId: sourcingClassificationId.value ?? null,
   })
 }
 </script>
@@ -370,7 +349,33 @@ function submit() {
       </div>
     </UCard>
 
-    <AdminSourcingOptionManager v-model="sourcingOptions" />
+    <UCard>
+      <template #header>
+        <h2 class="font-semibold text-highlighted">
+          Phân loại nguồn cá
+        </h2>
+        <p class="text-sm text-muted">
+          Tuỳ chọn — mỗi sản phẩm chọn tối đa 1 phân loại. Quản lý danh sách phân loại (thời gian dự kiến có cá/giao hàng...) ở trang Danh mục, tab "Phân loại nguồn cá".
+        </p>
+      </template>
+      <div v-if="sourcingClassifications.length" class="flex flex-wrap gap-2">
+        <button
+          v-for="item in sourcingClassifications"
+          :key="item.id"
+          type="button"
+          class="rounded border px-2.5 py-1 text-xs font-medium transition"
+          :class="sourcingClassificationId === item.id
+            ? 'border-primary bg-primary text-inverted'
+            : 'border-default text-muted hover:border-primary/50'"
+          @click="toggleSourcingClassification(item.id)"
+        >
+          {{ item.name }}
+        </button>
+      </div>
+      <p v-else class="text-sm text-muted">
+        Chưa có phân loại nào — tạo ở trang Danh mục, tab "Phân loại nguồn cá".
+      </p>
+    </UCard>
 
     <div class="flex justify-end gap-3">
       <UButton color="neutral" variant="outline" :disabled="loading" @click="emit('cancel')">

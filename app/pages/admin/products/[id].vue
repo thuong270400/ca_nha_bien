@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Category, Product, Tag } from '#shared/types/catalog'
+import type { Category, Product, SourcingClassification, Tag } from '#shared/types/catalog'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -7,9 +7,10 @@ const route = useRoute()
 const router = useRouter()
 const id = route.params.id as string
 
-const [{ data: categories }, { data: tags }, { data: product }] = await Promise.all([
+const [{ data: categories }, { data: tags }, { data: sourcingClassifications }, { data: product }] = await Promise.all([
   useFetch<Category[]>('/api/categories', { key: 'admin-categories' }),
   useFetch<Tag[]>('/api/tags', { key: 'admin-tags-form' }),
+  useFetch<SourcingClassification[]>('/api/sourcing-classifications', { key: 'admin-sourcing-classifications-form' }),
   useFetch<Product>(`/api/products/${id}`, { key: `admin-product-${id}` }),
 ])
 
@@ -44,6 +45,7 @@ useSeoMeta({ title: () => `Sửa: ${product.value?.name} - Cá Nhà Biển Admin
     <AdminProductForm
       :categories="categories ?? []"
       :tags="tags ?? []"
+      :sourcing-classifications="sourcingClassifications ?? []"
       :initial="product"
       :loading="loading"
       @submit="onSubmit"

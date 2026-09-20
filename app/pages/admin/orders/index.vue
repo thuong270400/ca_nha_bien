@@ -96,6 +96,9 @@ useSeoMeta({ title: 'Đơn hàng - Cá Nhà Biển Admin' })
                 <UBadge v-if="order.depositPercent" color="warning" variant="subtle">
                   Cọc {{ order.depositPercent }}%
                 </UBadge>
+                <UBadge v-if="order.deliveryMode === 'SPLIT'" color="primary" variant="subtle">
+                  Giao nhiều lần
+                </UBadge>
               </div>
             </td>
             <td class="px-4 py-3">

@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import type { AddressView } from '#shared/types/order'
 import type { CouponPublicView } from '#shared/types/coupon'
+import type { DepositSettingView } from '#shared/types/setting'
+import { formatDayRange, groupByAvailabilityWindow } from '#shared/utils/sourcing'
 
 const cartStore = useCartStore()
 await cartStore.ensureLoaded()
+
+const { data: depositSetting } = await useFetch<DepositSettingView>('/api/settings/deposit', { key: 'deposit-setting' })
 
 const router = useRouter()
 const toast = useToast()
@@ -29,7 +33,15 @@ const form = reactive({
   addressId: undefined as string | undefined,
   saveAddress: false,
   paymentMethod: 'COD' as 'COD' | 'BANK_TRANSFER',
+  deliveryMode: 'SINGLE' as 'SINGLE' | 'SPLIT',
 })
+
+// Nhóm sản phẩm trong giỏ theo khoảng ngày dự kiến có cá (vd cá có sẵn 1-2 ngày,
+// cá theo chuyến 5-7 ngày) — chỉ khi có từ 2 nhóm trở lên mới cần hỏi khách chọn
+// giao 1 lần hay giao nhiều lần, xem shared/utils/sourcing.ts#groupByAvailabilityWindow.
+const availabilityGroups = computed(() => cartStore.cart ? groupByAvailabilityWindow(cartStore.cart.items) : [])
+const hasMultipleAvailabilityGroups = computed(() => availabilityGroups.value.length > 1)
+const maxAvailabilityToDays = computed(() => availabilityGroups.value.reduce((max, g) => Math.max(max, g.toDays), 0))
 
 const selectedAddressId = ref<string | undefined>(undefined)
 
@@ -137,6 +149,16 @@ const total = computed(() => {
   return Math.max(subtotal - discount, 0) + shippingFee
 })
 
+// Xem trước số tiền cọc sẽ cần chuyển khoản ngay khi chọn BANK_TRANSFER — chỉ
+// áp dụng khi có % cọc cấu hình (< 100%, xem order.service.ts#attemptCreateOrder,
+// depositPercent >= 100 coi như không tách cọc). Giá trị thật (làm tròn) chỉ
+// được chốt khi tạo đơn, đây chỉ là số xem trước để khách không bị bất ngờ.
+const depositAmount = computed(() => {
+  const percent = depositSetting.value?.depositPercent
+  if (form.paymentMethod !== 'BANK_TRANSFER' || !percent || percent >= 100) return null
+  return Math.round(total.value * percent / 100)
+})
+
 async function submitOrder() {
   loading.value = true
   try {
@@ -220,6 +242,32 @@ useSeoMeta({ title: 'Thanh toán - Cá Nhà Biển' })
           />
         </div>
 
+        <div v-if="hasMultipleAvailabilityGroups" class="rounded-xl border border-default p-5">
+          <h2 class="mb-2 font-semibold text-highlighted">
+            Giao hàng
+          </h2>
+          <p class="mb-3 text-sm text-muted">
+            Đơn hàng có sản phẩm với thời gian dự kiến có cá khác nhau. Chọn cách giao phù hợp:
+          </p>
+          <URadioGroup
+            v-model="form.deliveryMode"
+            :items="[
+              { label: `Giao 1 lần — chung 1 hoá đơn, dự kiến có cá trong tối đa ${maxAvailabilityToDays} ngày`, value: 'SINGLE' },
+              { label: `Giao nhiều lần — tách thành ${availabilityGroups.length} đợt theo thời gian có cá`, value: 'SPLIT' },
+            ]"
+          />
+          <div v-if="form.deliveryMode === 'SPLIT'" class="mt-3 space-y-2">
+            <div v-for="(group, idx) in availabilityGroups" :key="idx" class="rounded-lg bg-elevated p-3 text-sm">
+              <p class="font-medium text-highlighted">
+                Đợt {{ idx + 1 }} — dự kiến có cá trong {{ formatDayRange(group.fromDays, group.toDays) }}
+              </p>
+              <p class="text-muted">
+                {{ group.items.map(i => i.product.name).join(', ') }}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div class="rounded-xl border border-default p-5">
           <h2 class="mb-4 font-semibold text-highlighted">
             Phương thức thanh toán
@@ -234,6 +282,10 @@ useSeoMeta({ title: 'Thanh toán - Cá Nhà Biển' })
               { label: 'ZaloPay (sắp ra mắt)', value: 'ZALOPAY', disabled: true },
             ]"
           />
+          <p v-if="depositAmount" class="mt-3 flex items-start gap-2 rounded-lg bg-primary/10 p-3 text-sm text-primary">
+            <UIcon name="i-lucide-circle-alert" class="mt-0.5 size-4 shrink-0" />
+            <span>Bạn chỉ cần chuyển khoản trước {{ formatVnd(depositAmount) }} khi đặt hàng, phần còn lại {{ formatVnd(total - depositAmount) }} sẽ thu sau.</span>
+          </p>
         </div>
       </div>
 
@@ -342,6 +394,17 @@ useSeoMeta({ title: 'Thanh toán - Cá Nhà Biển' })
             <span>Tổng cộng</span>
             <span class="text-primary">{{ formatVnd(total) }}</span>
           </div>
+          <template v-if="depositAmount">
+            <USeparator />
+            <div class="flex justify-between font-medium text-primary">
+              <span>Cần chuyển khoản ngay (cọc)</span>
+              <span>{{ formatVnd(depositAmount) }}</span>
+            </div>
+            <div class="flex justify-between text-muted">
+              <span>Còn lại (thu sau)</span>
+              <span>{{ formatVnd(total - depositAmount) }}</span>
+            </div>
+          </template>
         </div>
 
         <UButton class="mt-4" size="lg" block :loading="loading" @click="submitOrder">

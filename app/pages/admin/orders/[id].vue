@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { OrderStatus, OrderView } from '#shared/types/order'
+import { formatDayRange, groupByAvailabilityWindow } from '#shared/utils/sourcing'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -37,11 +38,27 @@ async function updateStatus(status: string) {
   }
 }
 
+// Nhóm sản phẩm theo khoảng ngày dự kiến có cá khi khách đã chọn "giao nhiều
+// lần" ở checkout (Order.deliveryMode) — xem shared/utils/sourcing.ts.
+const itemGroups = computed(() => order.value ? groupByAvailabilityWindow(order.value.items) : [])
+
+// Đơn có tách cọc (payment.depositAmount) xác nhận theo 2 bước tuần tự — nút
+// bấm tay chỉ xác nhận ĐÚNG bước đang chờ (PENDING: cọc trước, DEPOSIT_PAID:
+// phần còn lại), xem order.service.ts#confirmBankTransferPayment.
+const remainingAmount = computed(() => {
+  if (!order.value?.payment?.depositAmount) return null
+  return Number(order.value.total) - Number(order.value.payment.depositAmount)
+})
+const confirmButtonLabel = computed(() => {
+  if (order.value?.paymentStatus === 'DEPOSIT_PAID') return 'Xác nhận đã nhận đủ phần còn lại'
+  return order.value?.payment?.depositAmount ? 'Xác nhận đã nhận cọc' : 'Xác nhận đã nhận chuyển khoản'
+})
+
 const confirm = useConfirm()
 const confirmingPayment = ref(false)
 async function confirmPayment() {
   const ok = await confirm({
-    title: 'Xác nhận đã nhận chuyển khoản?',
+    title: `${confirmButtonLabel.value}?`,
     description: 'Đơn thường tự xác nhận qua webhook SePay — chỉ bấm tay khi đã kiểm tra tài khoản ngân hàng thực sự nhận được tiền cho đơn này mà hệ thống chưa tự cập nhật.',
   })
   if (!ok) return
@@ -85,19 +102,39 @@ useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Bi
       <div class="space-y-4">
         <UCard>
           <template #header>
-            <h2 class="font-semibold text-highlighted">
-              Sản phẩm
-            </h2>
+            <div class="flex items-center justify-between gap-2">
+              <h2 class="font-semibold text-highlighted">
+                Sản phẩm
+              </h2>
+              <UBadge v-if="order.deliveryMode === 'SPLIT'" color="primary" variant="subtle">
+                Giao nhiều lần ({{ itemGroups.length }} đợt)
+              </UBadge>
+            </div>
           </template>
-          <div class="space-y-2">
+
+          <template v-if="order.deliveryMode === 'SPLIT'">
+            <div v-for="(group, idx) in itemGroups" :key="idx" class="mb-3 last:mb-0">
+              <p class="mb-2 flex items-center gap-1 text-xs font-medium text-primary">
+                <UIcon name="i-lucide-package" class="size-3.5" /> Đợt {{ idx + 1 }} — dự kiến có cá trong {{ formatDayRange(group.fromDays, group.toDays) }}
+              </p>
+              <div class="space-y-1.5">
+                <div v-for="item in group.items" :key="item.id" class="flex justify-between text-sm">
+                  <span>{{ item.productName }} ({{ item.unit }}) × {{ item.quantity }}</span>
+                  <span class="font-medium">{{ formatVnd(item.lineTotal) }}</span>
+                </div>
+              </div>
+            </div>
+          </template>
+          <div v-else class="space-y-2">
             <div v-for="item in order.items" :key="item.id" class="flex justify-between text-sm">
               <span>{{ item.productName }} ({{ item.unit }}) × {{ item.quantity }}</span>
               <span class="font-medium">{{ formatVnd(item.lineTotal) }}</span>
             </div>
           </div>
-          <p v-if="order.depositPercent" class="mt-4 flex items-start gap-2 rounded-lg bg-warning/10 p-3 text-sm text-warning">
+
+          <p v-if="order.depositPercent && order.paymentMethod !== 'BANK_TRANSFER'" class="mt-4 flex items-start gap-2 rounded-lg bg-warning/10 p-3 text-sm text-warning">
             <UIcon name="i-lucide-circle-alert" class="mt-0.5 size-4 shrink-0" />
-            <span>Đơn có sản phẩm cần đặt cọc trước tối đa {{ order.depositPercent }}% — liên hệ khách để xác nhận cọc.</span>
+            <span>Đơn cần đặt cọc trước {{ order.depositPercent }}% — liên hệ khách để xác nhận cọc.</span>
           </p>
           <p v-if="order.estimatedAvailabilityDays" class="mt-2 flex items-center gap-2 text-sm text-muted">
             <UIcon name="i-lucide-clock" class="size-4 shrink-0" />
@@ -139,13 +176,13 @@ useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Bi
             {{ paymentMethodLabels[order.paymentMethod] }}
           </p>
           <UButton
-            v-if="order.paymentMethod === 'BANK_TRANSFER' && order.paymentStatus === 'PENDING'"
+            v-if="order.paymentMethod === 'BANK_TRANSFER' && (order.paymentStatus === 'PENDING' || order.paymentStatus === 'DEPOSIT_PAID')"
             class="mt-3"
             size="sm"
             :loading="confirmingPayment"
             @click="confirmPayment"
           >
-            Xác nhận đã nhận chuyển khoản
+            {{ confirmButtonLabel }}
           </UButton>
           <div class="mt-3 space-y-2 text-sm">
             <div class="flex justify-between">
@@ -165,6 +202,17 @@ useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Bi
               <span>Tổng cộng</span>
               <span class="text-primary">{{ formatVnd(order.total) }}</span>
             </div>
+            <template v-if="order.payment?.depositAmount">
+              <USeparator />
+              <div class="flex justify-between">
+                <span class="text-muted">Cọc trước</span>
+                <span>{{ formatVnd(order.payment.depositAmount) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-muted">Còn lại</span>
+                <span>{{ formatVnd(remainingAmount ?? 0) }}</span>
+              </div>
+            </template>
           </div>
         </UCard>
       </div>

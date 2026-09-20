@@ -8,6 +8,8 @@ export interface CartItemView {
   lineTotal: string
   stock: number
   available: boolean
+  availabilityFromDays: number
+  availabilityToDays: number
   product: {
     id: string
     name: string

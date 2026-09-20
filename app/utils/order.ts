@@ -10,13 +10,15 @@ export const paymentMethodLabels: Record<PaymentMethod, string> = {
 
 export const paymentStatusLabels: Record<PaymentStatus, string> = {
   PENDING: 'Chờ thanh toán',
+  DEPOSIT_PAID: 'Đã đặt cọc',
   PAID: 'Đã thanh toán',
   FAILED: 'Thanh toán thất bại',
   REFUNDED: 'Đã hoàn tiền',
 }
 
-export const paymentStatusColors: Record<PaymentStatus, 'neutral' | 'warning' | 'success' | 'error'> = {
+export const paymentStatusColors: Record<PaymentStatus, 'neutral' | 'info' | 'warning' | 'success' | 'error'> = {
   PENDING: 'warning',
+  DEPOSIT_PAID: 'info',
   PAID: 'success',
   FAILED: 'error',
   REFUNDED: 'neutral',

@@ -1,6 +1,6 @@
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED'
 export type PaymentMethod = 'COD' | 'BANK_TRANSFER' | 'VNPAY' | 'MOMO' | 'ZALOPAY'
-export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'
+export type PaymentStatus = 'PENDING' | 'DEPOSIT_PAID' | 'PAID' | 'FAILED' | 'REFUNDED'
 
 /** Snapshot của thông tin ngân hàng (Setting) tại thời điểm tạo đơn — QR VietQR luôn dựng từ đây. */
 export interface PaymentBankSnapshot {
@@ -10,6 +10,8 @@ export interface PaymentBankSnapshot {
   bankAccountNumber: string | null
   bankAccountName: string | null
 }
+
+export type OrderDeliveryMode = 'SINGLE' | 'SPLIT'
 
 export interface OrderItemView {
   id: string
@@ -21,6 +23,8 @@ export interface OrderItemView {
   price: string
   quantity: number
   lineTotal: string
+  availabilityFromDays: number | null
+  availabilityToDays: number | null
 }
 
 export interface PaymentView {
@@ -29,6 +33,9 @@ export interface PaymentView {
   method: PaymentMethod
   status: PaymentStatus
   amount: string
+  /** Số tiền cọc cần thu trước qua chuyển khoản — null nghĩa là đơn không tách cọc, thu đủ `amount` luôn. */
+  depositAmount: string | null
+  depositPaidAt: string | null
   transactionId: string | null
   paidAt: string | null
   bankSnapshot: PaymentBankSnapshot | null
@@ -60,10 +67,12 @@ export interface OrderView {
   shippingFee: string
   total: string
   discountAmount: string
-  /** % cọc cao nhất trong đơn — null/0 nghĩa là không có sản phẩm nào cần cọc. Chỉ là cờ đánh dấu, không đổi `total`/`payment.amount`. */
+  /** % cọc áp dụng cho đơn — null/0 nghĩa là không cần cọc. Với BANK_TRANSFER, đây là % dùng để tính `payment.depositAmount` (thu trước thật qua QR); với COD chỉ là cờ đánh dấu, không đổi `total`. */
   depositPercent: number | null
   /** Số ngày dự kiến giao hàng dài nhất trong đơn — null nghĩa là không sản phẩm nào khai báo. */
   estimatedAvailabilityDays: number | null
+  /** Khách chọn ở checkout khi giỏ hàng có nhiều khoảng ngày dự kiến có cá khác nhau. */
+  deliveryMode: OrderDeliveryMode
   paymentMethod: PaymentMethod
   paymentStatus: PaymentStatus
   recipientName: string
