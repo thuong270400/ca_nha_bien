@@ -285,15 +285,18 @@ export async function hardDeleteProduct(id: string) {
 
   // OrderItem giữ snapshot đầy đủ (productName/unit/price/...) nên mất liên kết
   // productId/variantId không ảnh hưởng hiển thị đơn cũ (xem schema.prisma) —
-  // chỉ chặn xoá nếu còn đơn hàng chưa hoàn tất (chưa thanh toán và chưa huỷ).
+  // chỉ chặn xoá nếu còn đơn hàng đang chờ xác nhận (PENDING). Không xét
+  // paymentStatus vì đơn COD (đa số) không bao giờ đạt PAID (thu tiền mặt khi
+  // giao, không qua cổng thanh toán) — mọi trạng thái khác PENDING (đã xác
+  // nhận, đang xử lý, đang giao, đã giao, đã huỷ) đều coi là đủ chốt để xoá.
   const blockingOrderItem = await prisma.orderItem.findFirst({
     where: {
       productId: id,
-      order: { paymentStatus: { not: 'PAID' }, status: { not: 'CANCELLED' } },
+      order: { status: 'PENDING' },
     },
   })
   if (blockingOrderItem) {
-    throw Errors.conflict('Không thể xoá vĩnh viễn sản phẩm còn nằm trong đơn hàng chưa thanh toán hoặc chưa huỷ')
+    throw Errors.conflict('Không thể xoá vĩnh viễn sản phẩm còn nằm trong đơn hàng đang chờ xác nhận')
   }
 
   try {
