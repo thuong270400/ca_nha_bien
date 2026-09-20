@@ -16,8 +16,7 @@ const form = reactive({
   shippingFee: 0,
   freeShippingThreshold: 0,
   depositPercent: 0,
-  deliveryFromDays: undefined as number | undefined,
-  deliveryToDays: undefined as number | undefined,
+  deliveryDays: undefined as number | undefined,
   bankTransferEnabled: false,
   bankName: '',
   bankCode: '',
@@ -30,8 +29,7 @@ watch(data, (value) => {
   form.shippingFee = value.shippingFee
   form.freeShippingThreshold = value.freeShippingThreshold
   form.depositPercent = value.depositPercent
-  form.deliveryFromDays = value.deliveryFromDays ?? undefined
-  form.deliveryToDays = value.deliveryToDays ?? undefined
+  form.deliveryDays = value.deliveryDays ?? undefined
   form.bankTransferEnabled = value.bankTransferEnabled
   form.bankName = value.bankName ?? ''
   form.bankCode = value.bankCode ?? ''
@@ -89,16 +87,15 @@ useSeoMeta({ title: 'Cài đặt - Cá Nhà Biển Admin' })
       <h2 class="font-semibold text-highlighted">
         Thời gian giao hàng
       </h2>
-      <UFormField label="Thời gian dự kiến giao hàng" hint="Khoảng ngày tới tay khách (đã tính cả vận chuyển) — vd từ 5 đến 7 ngày.">
+      <UFormField label="Thời gian dự kiến giao hàng" hint="Số ngày ước tính tới tay khách (đã tính cả vận chuyển) — vd ~7 ngày.">
         <div class="flex items-center gap-2">
-          <UInputNumber v-model="form.deliveryFromDays" :min="0" placeholder="Từ" class="w-full" />
-          <span class="shrink-0 text-sm text-muted">đến</span>
-          <UInputNumber v-model="form.deliveryToDays" :min="0" placeholder="Đến" class="w-full" />
+          <span class="shrink-0 text-sm text-muted">~</span>
+          <UInputNumber v-model="form.deliveryDays" :min="0" class="w-full" />
           <span class="shrink-0 text-sm text-muted">ngày</span>
         </div>
       </UFormField>
       <p class="text-xs text-muted">
-        Áp dụng chung cho tất cả sản phẩm — không còn cấu hình riêng theo từng phân loại nguồn cá. Chỉ để hiển thị mô tả cho khách ở trang sản phẩm, không dùng để tính toán gì (khác với khoảng ngày dự kiến có cá của từng phân loại, dùng để nhóm đợt giao ở checkout).
+        Áp dụng chung cho tất cả sản phẩm — không còn cấu hình riêng theo từng phân loại nguồn cá. Chỉ hiển thị cho khách lúc tiến hành thanh toán, không dùng để tính toán gì (khác với số ngày dự kiến có cá của từng phân loại, dùng để nhóm đợt giao ở checkout).
       </p>
       <UButton :loading="saving" @click="save">
         Lưu cài đặt

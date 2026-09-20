@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { OrderStatus, OrderView } from '#shared/types/order'
-import { formatDayRange, groupByAvailabilityWindow } from '#shared/utils/sourcing'
+import { formatDays, groupByAvailabilityDays } from '#shared/utils/sourcing'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -38,9 +38,9 @@ async function updateStatus(status: string) {
   }
 }
 
-// Nhóm sản phẩm theo khoảng ngày dự kiến có cá khi khách đã chọn "giao nhiều
+// Nhóm sản phẩm theo số ngày dự kiến có cá khi khách đã chọn "giao nhiều
 // lần" ở checkout (Order.deliveryMode) — xem shared/utils/sourcing.ts.
-const itemGroups = computed(() => order.value ? groupByAvailabilityWindow(order.value.items) : [])
+const itemGroups = computed(() => order.value ? groupByAvailabilityDays(order.value.items) : [])
 
 // Đơn có tách cọc (payment.depositAmount) xác nhận theo 2 bước tuần tự — nút
 // bấm tay chỉ xác nhận ĐÚNG bước đang chờ (PENDING: cọc trước, DEPOSIT_PAID:
@@ -115,7 +115,7 @@ useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Bi
           <template v-if="order.deliveryMode === 'SPLIT'">
             <div v-for="(group, idx) in itemGroups" :key="idx" class="mb-3 last:mb-0">
               <p class="mb-2 flex items-center gap-1 text-xs font-medium text-primary">
-                <UIcon name="i-lucide-package" class="size-3.5" /> Đợt {{ idx + 1 }} — dự kiến có cá trong {{ formatDayRange(group.fromDays, group.toDays) }}
+                <UIcon name="i-lucide-package" class="size-3.5" /> Đợt {{ idx + 1 }} — dự kiến có cá trong {{ formatDays(group.days) }}
               </p>
               <div class="space-y-1.5">
                 <div v-for="item in group.items" :key="item.id" class="flex justify-between text-sm">

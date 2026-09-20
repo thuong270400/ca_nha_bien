@@ -31,16 +31,6 @@ export interface ProductVariant {
   isDefault: boolean
 }
 
-export interface SourcingClassification {
-  id: string
-  name: string
-  slug: string
-  catchProcess: string | null
-  availabilityFromDays: number | null
-  availabilityToDays: number | null
-  position: number
-}
-
 export interface ProductImage {
   id: string
   productId: string
@@ -89,8 +79,7 @@ export interface Product {
   variants: ProductVariant[]
   tags: Tag[]
   suggestedDishes: SuggestedDish[]
-  sourcingClassificationId: string | null
-  sourcingClassification: SourcingClassification | null
+  availabilityDays: number | null
 }
 
 export interface ProductDetail extends Product {

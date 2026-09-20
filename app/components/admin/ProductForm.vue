@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { Category, Product, SourcingClassification, Tag } from '#shared/types/catalog'
+import type { Category, Product, Tag } from '#shared/types/catalog'
 
 const props = defineProps<{
   categories: Category[]
   tags: Tag[]
-  sourcingClassifications: SourcingClassification[]
   initial?: Product
   loading?: boolean
 }>()
@@ -34,6 +33,7 @@ const form = reactive({
   origin: props.initial?.origin ?? '',
   status: props.initial?.status ?? 'ACTIVE',
   isFeatured: props.initial?.isFeatured ?? false,
+  availabilityDays: props.initial?.availabilityDays ?? undefined,
 })
 
 const categoryIds = ref<string[]>(props.initial?.categories.map(c => c.id) ?? [])
@@ -150,12 +150,6 @@ function toggleTag(id: string) {
     : [...selectedTagIds.value, id]
 }
 
-const sourcingClassificationId = ref<string | undefined>(props.initial?.sourcingClassificationId ?? undefined)
-
-function toggleSourcingClassification(id: string) {
-  sourcingClassificationId.value = sourcingClassificationId.value === id ? undefined : id
-}
-
 function submit() {
   emit('submit', {
     name: form.name,
@@ -183,7 +177,7 @@ function submit() {
       videoUrl: d.videoUrl || undefined,
       position: idx,
     })),
-    sourcingClassificationId: sourcingClassificationId.value ?? null,
+    availabilityDays: form.availabilityDays ?? null,
   })
 }
 </script>
@@ -352,29 +346,19 @@ function submit() {
     <UCard>
       <template #header>
         <h2 class="font-semibold text-highlighted">
-          Phân loại nguồn cá
+          Ngày dự kiến có hàng
         </h2>
         <p class="text-sm text-muted">
-          Tuỳ chọn — mỗi sản phẩm chọn tối đa 1 phân loại. Quản lý danh sách phân loại (thời gian dự kiến có cá/giao hàng...) ở trang Danh mục, tab "Phân loại nguồn cá".
+          Tuỳ chọn — để trống nghĩa là "Có sẵn" (mặc định 2 ngày). Dùng để nhóm đợt giao khi khách chọn giao nhiều lần ở checkout.
         </p>
       </template>
-      <div v-if="sourcingClassifications.length" class="flex flex-wrap gap-2">
-        <button
-          v-for="item in sourcingClassifications"
-          :key="item.id"
-          type="button"
-          class="rounded border px-2.5 py-1 text-xs font-medium transition"
-          :class="sourcingClassificationId === item.id
-            ? 'border-primary bg-primary text-inverted'
-            : 'border-default text-muted hover:border-primary/50'"
-          @click="toggleSourcingClassification(item.id)"
-        >
-          {{ item.name }}
-        </button>
-      </div>
-      <p v-else class="text-sm text-muted">
-        Chưa có phân loại nào — tạo ở trang Danh mục, tab "Phân loại nguồn cá".
-      </p>
+      <UFormField label="Số ngày dự kiến có hàng">
+        <div class="flex items-center gap-2">
+          <span class="shrink-0 text-sm text-muted">~</span>
+          <UInputNumber v-model="form.availabilityDays" :min="0" class="w-full" />
+          <span class="shrink-0 text-sm text-muted">ngày</span>
+        </div>
+      </UFormField>
     </UCard>
 
     <div class="flex justify-end gap-3">

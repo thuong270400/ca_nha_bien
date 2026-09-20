@@ -24,8 +24,7 @@ export interface OrderItemView {
   price: string
   quantity: number
   lineTotal: string
-  availabilityFromDays: number | null
-  availabilityToDays: number | null
+  availabilityDays: number | null
 }
 
 export interface PaymentView {

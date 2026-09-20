@@ -34,17 +34,16 @@ export async function getDepositSettings(client: SettingClient = prisma) {
 }
 
 /**
- * Khoảng ngày dự kiến giao hàng áp dụng chung cho MỌI sản phẩm — thay cho việc
- * khai báo theo từng SourcingClassification trước đây. Chỉ để hiển thị mô tả
- * cho khách (GET /api/settings/delivery, trang sản phẩm), không dùng trong bất
- * kỳ tính toán nào — availability (dùng để nhóm đợt giao) vẫn nằm trên
- * SourcingClassification, không đổi.
+ * Số ngày dự kiến giao hàng áp dụng chung cho MỌI sản phẩm — không khai báo
+ * riêng theo từng sản phẩm. Chỉ để hiển thị cho khách lúc tiến hành thanh toán
+ * (GET /api/settings/delivery, checkout.vue), không dùng trong bất kỳ tính toán
+ * nào — availability (dùng để nhóm đợt giao) vẫn nằm trên Product.availabilityDays,
+ * không đổi.
  */
 export async function getDeliverySettings(client: SettingClient = prisma) {
   const setting = await client.setting.findUnique({ where: { id: SETTINGS_ID } })
   return {
-    deliveryFromDays: setting?.deliveryFromDays ?? null,
-    deliveryToDays: setting?.deliveryToDays ?? null,
+    deliveryDays: setting?.deliveryDays ?? null,
   }
 }
 

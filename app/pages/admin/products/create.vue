@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import type { Category, SourcingClassification, Tag } from '#shared/types/catalog'
+import type { Category, Tag } from '#shared/types/catalog'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 const { data: categories } = await useFetch<Category[]>('/api/categories', { key: 'admin-categories' })
 const { data: tags } = await useFetch<Tag[]>('/api/tags', { key: 'admin-tags-form' })
-const { data: sourcingClassifications } = await useFetch<SourcingClassification[]>('/api/sourcing-classifications', { key: 'admin-sourcing-classifications-form' })
 
 const router = useRouter()
 const toast = useToast()
@@ -36,7 +35,6 @@ useSeoMeta({ title: 'Thêm sản phẩm - Cá Nhà Biển Admin' })
     <AdminProductForm
       :categories="categories ?? []"
       :tags="tags ?? []"
-      :sourcing-classifications="sourcingClassifications ?? []"
       :loading="loading"
       @submit="onSubmit"
       @cancel="router.push('/admin/products')"

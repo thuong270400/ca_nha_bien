@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Category, Product, SourcingClassification, Tag } from '#shared/types/catalog'
+import type { Category, Product, Tag } from '#shared/types/catalog'
 
 const open = defineModel<boolean>('open', { default: false })
 const { product } = defineProps<{ product: Product }>()
@@ -7,7 +7,6 @@ const emit = defineEmits<{ updated: [product: Product] }>()
 
 const { data: categories } = await useFetch<Category[]>('/api/categories', { key: 'admin-categories' })
 const { data: tags } = await useFetch<Tag[]>('/api/tags', { key: 'admin-tags-form' })
-const { data: sourcingClassifications } = await useFetch<SourcingClassification[]>('/api/sourcing-classifications', { key: 'admin-sourcing-classifications-form' })
 
 const toast = useToast()
 const loading = ref(false)
@@ -35,7 +34,6 @@ async function onSubmit(payload: Record<string, unknown>) {
         v-if="open"
         :categories="categories ?? []"
         :tags="tags ?? []"
-        :sourcing-classifications="sourcingClassifications ?? []"
         :initial="product"
         :loading="loading"
         @submit="onSubmit"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Product } from '#shared/types/catalog'
-import { formatDayRange, resolveSourcingClassification } from '#shared/utils/sourcing'
+import { formatDays, resolveAvailabilityDays } from '#shared/utils/sourcing'
 
 const props = withDefaults(defineProps<{ product: Product, index?: number }>(), { index: 0 })
 
@@ -39,10 +39,10 @@ async function onToggleWishlist() {
 
 const imageTags = computed(() => product.value.tags.filter(t => t.showOnImage))
 const labelTags = computed(() => product.value.tags.filter(t => !t.showOnImage))
-// Product's chosen sourcing classification (or the "hàng có sẵn" default when
-// none is selected) — same logic used to derive Order.estimatedAvailabilityDays,
-// so the card sets the same expectation the customer will see confirmed at checkout.
-const primarySourcingOption = computed(() => resolveSourcingClassification(product.value.sourcingClassification))
+// Product's own availabilityDays (or the "hàng có sẵn" default when not set) —
+// same logic used to derive Order.estimatedAvailabilityDays, so the card sets
+// the same expectation the customer will see confirmed at checkout.
+const availabilityDaysText = computed(() => formatDays(resolveAvailabilityDays(product.value.availabilityDays)))
 const defaultVariant = computed(() => product.value.variants.find(v => v.isDefault) ?? product.value.variants[0])
 const coverImage = computed(() => product.value.images[0]?.url ?? '/images/placeholder-fish.svg')
 const hoverImage = computed(() => product.value.images[1]?.url ?? null)
@@ -171,9 +171,9 @@ onUnmounted(stopShineLoop)
           {{ tag.name }}
         </span>
       </div>
-      <p v-if="formatDayRange(primarySourcingOption?.availabilityFromDays, primarySourcingOption?.availabilityToDays)" class="flex items-center gap-1 text-[11px] text-muted">
-        <UIcon name="i-lucide-clock" class="size-3 shrink-0" />
-        <span class="truncate">Dự kiến: {{ formatDayRange(primarySourcingOption?.availabilityFromDays, primarySourcingOption?.availabilityToDays) }}</span>
+      <p v-if="availabilityDaysText" class="flex items-center gap-1 text-xs font-semibold text-muted">
+        <UIcon name="i-lucide-clock" class="size-3.5 shrink-0" />
+        <span class="truncate">Dự kiến có cá: {{ availabilityDaysText }}</span>
       </p>
       <div class="mt-auto flex items-end justify-between gap-2 pt-2">
         <div class="min-w-0 flex-1">

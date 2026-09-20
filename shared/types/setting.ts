@@ -2,8 +2,7 @@ export interface SettingView {
   shippingFee: number
   freeShippingThreshold: number
   depositPercent: number
-  deliveryFromDays: number | null
-  deliveryToDays: number | null
+  deliveryDays: number | null
   bankTransferEnabled: boolean
   bankName: string | null
   bankCode: string | null
@@ -11,10 +10,9 @@ export interface SettingView {
   bankAccountName: string | null
 }
 
-/** Subset of SettingView exposed publicly (GET /api/settings/delivery) for storefront display. */
+/** Subset of SettingView exposed publicly (GET /api/settings/delivery), shown to the customer during checkout. */
 export interface DeliverySettingView {
-  deliveryFromDays: number | null
-  deliveryToDays: number | null
+  deliveryDays: number | null
 }
 
 /** Subset of SettingView exposed publicly (GET /api/settings/deposit) so checkout can preview the amount due upfront for BANK_TRANSFER before placing the order. */

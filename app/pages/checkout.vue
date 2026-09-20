@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import type { AddressView } from '#shared/types/order'
 import type { CouponPublicView } from '#shared/types/coupon'
-import type { DepositSettingView } from '#shared/types/setting'
-import { formatDayRange, groupByAvailabilityWindow } from '#shared/utils/sourcing'
+import type { DeliverySettingView, DepositSettingView } from '#shared/types/setting'
+import { formatDays, groupByAvailabilityDays } from '#shared/utils/sourcing'
 
 const cartStore = useCartStore()
 await cartStore.ensureLoaded()
 
 const { data: depositSetting } = await useFetch<DepositSettingView>('/api/settings/deposit', { key: 'deposit-setting' })
+const { data: deliverySetting } = await useFetch<DeliverySettingView>('/api/settings/delivery', { key: 'delivery-setting' })
+const deliveryDaysText = computed(() => formatDays(deliverySetting.value?.deliveryDays))
 
 const router = useRouter()
 const toast = useToast()
@@ -36,12 +38,12 @@ const form = reactive({
   deliveryMode: 'SINGLE' as 'SINGLE' | 'SPLIT',
 })
 
-// Nhóm sản phẩm trong giỏ theo khoảng ngày dự kiến có cá (vd cá có sẵn 1-2 ngày,
-// cá theo chuyến 5-7 ngày) — chỉ khi có từ 2 nhóm trở lên mới cần hỏi khách chọn
-// giao 1 lần hay giao nhiều lần, xem shared/utils/sourcing.ts#groupByAvailabilityWindow.
-const availabilityGroups = computed(() => cartStore.cart ? groupByAvailabilityWindow(cartStore.cart.items) : [])
+// Nhóm sản phẩm trong giỏ theo số ngày dự kiến có cá (vd cá có sẵn ~2 ngày, cá
+// theo chuyến ~7 ngày) — chỉ khi có từ 2 nhóm trở lên mới cần hỏi khách chọn
+// giao 1 lần hay giao nhiều lần, xem shared/utils/sourcing.ts#groupByAvailabilityDays.
+const availabilityGroups = computed(() => cartStore.cart ? groupByAvailabilityDays(cartStore.cart.items) : [])
 const hasMultipleAvailabilityGroups = computed(() => availabilityGroups.value.length > 1)
-const maxAvailabilityToDays = computed(() => availabilityGroups.value.reduce((max, g) => Math.max(max, g.toDays), 0))
+const maxAvailabilityDays = computed(() => availabilityGroups.value.reduce((max, g) => Math.max(max, g.days), 0))
 
 const selectedAddressId = ref<string | undefined>(undefined)
 
@@ -252,14 +254,14 @@ useSeoMeta({ title: 'Thanh toán - Cá Nhà Biển' })
           <URadioGroup
             v-model="form.deliveryMode"
             :items="[
-              { label: `Giao 1 lần — chung 1 hoá đơn, dự kiến có cá trong tối đa ${maxAvailabilityToDays} ngày`, value: 'SINGLE' },
+              { label: `Giao 1 lần — chung 1 hoá đơn, dự kiến có cá trong tối đa ${maxAvailabilityDays} ngày`, value: 'SINGLE' },
               { label: `Giao nhiều lần — tách thành ${availabilityGroups.length} đợt theo thời gian có cá`, value: 'SPLIT' },
             ]"
           />
           <div v-if="form.deliveryMode === 'SPLIT'" class="mt-3 space-y-2">
             <div v-for="(group, idx) in availabilityGroups" :key="idx" class="rounded-lg bg-elevated p-3 text-sm">
               <p class="font-medium text-highlighted">
-                Đợt {{ idx + 1 }} — dự kiến có cá trong {{ formatDayRange(group.fromDays, group.toDays) }}
+                Đợt {{ idx + 1 }} — dự kiến có cá trong {{ formatDays(group.days) }}
               </p>
               <p class="text-muted">
                 {{ group.items.map(i => i.product.name).join(', ') }}
@@ -285,6 +287,10 @@ useSeoMeta({ title: 'Thanh toán - Cá Nhà Biển' })
           <p v-if="depositAmount" class="mt-3 flex items-start gap-2 rounded-lg bg-primary/10 p-3 text-sm text-primary">
             <UIcon name="i-lucide-circle-alert" class="mt-0.5 size-4 shrink-0" />
             <span>Bạn chỉ cần chuyển khoản trước {{ formatVnd(depositAmount) }} khi đặt hàng, phần còn lại {{ formatVnd(total - depositAmount) }} sẽ thu sau.</span>
+          </p>
+          <p v-if="deliveryDaysText" class="mt-3 flex items-center gap-1.5 text-sm text-muted">
+            <UIcon name="i-lucide-truck" class="size-4 shrink-0" />
+            <span>Thời gian dự kiến giao hàng: {{ deliveryDaysText }}</span>
           </p>
         </div>
       </div>

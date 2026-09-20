@@ -46,8 +46,8 @@ export const productCreateSchema = z.object({
   variants: z.array(productVariantSchema).min(1, 'Cần ít nhất 1 biến thể (đơn vị bán)'),
   tagIds: z.array(z.string()).optional(),
   suggestedDishes: z.array(suggestedDishSchema).optional(),
-  /** null xoá lựa chọn hiện tại (về mặc định "Có sẵn"), omit khi update giữ nguyên. */
-  sourcingClassificationId: z.string().trim().min(1).nullable().optional(),
+  /** Số ngày dự kiến có hàng do admin tự nhập — null xoá về mặc định "Có sẵn", omit khi update giữ nguyên. */
+  availabilityDays: z.coerce.number().int().min(0).nullable().optional(),
 })
 
 export const productUpdateSchema = productCreateSchema.partial().extend({

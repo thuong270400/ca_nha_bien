@@ -1,5 +1,5 @@
 import type { CreateOrderInput } from '#shared/schemas/order.schema'
-import { resolveAvailabilityWindow } from '#shared/utils/sourcing'
+import { resolveAvailabilityDays } from '#shared/utils/sourcing'
 import type { SepayWebhookPayload } from '../utils/schemas/sepay.schema'
 import { validateCoupon } from './coupon.service'
 import { getBankSettings, getDepositSettings } from './setting.service'
@@ -48,18 +48,18 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
   return prisma.$transaction(async (tx) => {
     const cart = await tx.cart.findUnique({
       where: { id: ctx.cartId },
-      include: { items: { include: { variant: true, product: { include: { sourcingClassification: true } } } } },
+      include: { items: { include: { variant: true, product: true } } },
     })
     if (!cart || cart.items.length === 0) throw Errors.badRequest('Giỏ hàng đang trống')
 
     let subtotal = 0
     const orderItemsData: Prisma.OrderItemCreateManyOrderInput[] = []
     // Thời gian giao dự kiến của đơn (deliveryMode = SINGLE) = "xấu nhất" (chờ
-    // lâu nhất) trong số khoảng ngày dự kiến có cá của mọi sản phẩm trong giỏ,
-    // dùng max để không đánh giá thấp thời gian chờ thực tế. Sản phẩm chưa chọn
-    // phân loại nào đóng góp mức mặc định "hàng có sẵn" (xem resolveAvailabilityWindow).
-    // Khoảng của từng item cũng được snapshot vào OrderItem để nhóm đợt giao khi
-    // khách chọn deliveryMode = SPLIT (xem groupByAvailabilityWindow).
+    // lâu nhất) trong số ngày dự kiến có cá của mọi sản phẩm trong giỏ, dùng max
+    // để không đánh giá thấp thời gian chờ thực tế. Sản phẩm chưa nhập số ngày
+    // đóng góp mức mặc định "hàng có sẵn" (xem resolveAvailabilityDays). Số ngày
+    // của từng item cũng được snapshot vào OrderItem để nhóm đợt giao khi khách
+    // chọn deliveryMode = SPLIT (xem groupByAvailabilityDays).
     let estimatedAvailabilityDays: number | null = null
 
     for (const item of cart.items) {
@@ -68,7 +68,7 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
       }
       const lineTotal = Number(item.variant.price) * item.quantity
       subtotal += lineTotal
-      const { fromDays, toDays } = resolveAvailabilityWindow(item.product.sourcingClassification)
+      const availabilityDays = resolveAvailabilityDays(item.product.availabilityDays)
       orderItemsData.push({
         productId: item.productId,
         variantId: item.variantId,
@@ -77,12 +77,11 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
         price: item.variant.price,
         quantity: item.quantity,
         lineTotal: lineTotal.toFixed(2),
-        availabilityFromDays: fromDays,
-        availabilityToDays: toDays,
+        availabilityDays,
       })
 
-      if (toDays > 0 && (estimatedAvailabilityDays === null || toDays > estimatedAvailabilityDays)) {
-        estimatedAvailabilityDays = toDays
+      if (availabilityDays > 0 && (estimatedAvailabilityDays === null || availabilityDays > estimatedAvailabilityDays)) {
+        estimatedAvailabilityDays = availabilityDays
       }
     }
 

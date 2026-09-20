@@ -25,7 +25,6 @@ export const productInclude = {
   variants: { orderBy: { price: 'asc' as const } },
   tags: true,
   suggestedDishes: { orderBy: { position: 'asc' as const } },
-  sourcingClassification: true,
 } satisfies Prisma.ProductInclude
 
 type IncomingVariant = ProductCreateInput['variants'][number]
@@ -190,7 +189,7 @@ export async function createProduct(input: ProductCreateInput) {
         origin: input.origin,
         status: input.status ?? 'ACTIVE',
         isFeatured: input.isFeatured ?? false,
-        sourcingClassificationId: input.sourcingClassificationId ?? undefined,
+        availabilityDays: input.availabilityDays ?? undefined,
         categories: { connect: input.categoryIds.map(id => ({ id })) },
         price: defaultVariant.price,
         compareAtPrice: defaultVariant.compareAtPrice,
@@ -255,7 +254,7 @@ export async function updateProduct(id: string, input: ProductUpdateInput) {
         status: input.status,
         deletedAt: input.status === 'ACTIVE' ? null : undefined,
         isFeatured: input.isFeatured,
-        sourcingClassificationId: input.sourcingClassificationId,
+        availabilityDays: input.availabilityDays,
         categories: input.categoryIds ? { set: input.categoryIds.map(id => ({ id })) } : undefined,
         price: defaultVariant.price,
         compareAtPrice: defaultVariant.compareAtPrice,
