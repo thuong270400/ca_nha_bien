@@ -20,7 +20,7 @@ definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 interface ReportData {
   revenueOverTime: { date: string, revenue: number }[]
-  topProducts: { productId: string, productName: string, quantity: number, revenue: string }[]
+  topProducts: { productId: string | null, productName: string, quantity: number, revenue: string }[]
   statusBreakdown: { status: string, count: number }[]
 }
 

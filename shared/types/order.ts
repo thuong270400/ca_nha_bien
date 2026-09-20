@@ -16,8 +16,9 @@ export type OrderDeliveryMode = 'SINGLE' | 'SPLIT'
 export interface OrderItemView {
   id: string
   orderId: string
-  productId: string
-  variantId: string
+  /** null nếu sản phẩm/biến thể gốc đã bị xoá vĩnh viễn sau khi đơn thanh toán/huỷ — các field snapshot bên dưới vẫn đủ để hiển thị. */
+  productId: string | null
+  variantId: string | null
   productName: string
   unit: string
   price: string

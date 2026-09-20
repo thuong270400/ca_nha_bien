@@ -283,6 +283,19 @@ export async function hardDeleteProduct(id: string) {
     throw Errors.badRequest('Chỉ có thể xoá vĩnh viễn sản phẩm đã được ẩn trước đó')
   }
 
+  // OrderItem giữ snapshot đầy đủ (productName/unit/price/...) nên mất liên kết
+  // productId/variantId không ảnh hưởng hiển thị đơn cũ (xem schema.prisma) —
+  // chỉ chặn xoá nếu còn đơn hàng chưa hoàn tất (chưa thanh toán và chưa huỷ).
+  const blockingOrderItem = await prisma.orderItem.findFirst({
+    where: {
+      productId: id,
+      order: { paymentStatus: { not: 'PAID' }, status: { not: 'CANCELLED' } },
+    },
+  })
+  if (blockingOrderItem) {
+    throw Errors.conflict('Không thể xoá vĩnh viễn sản phẩm còn nằm trong đơn hàng chưa thanh toán hoặc chưa huỷ')
+  }
+
   try {
     await prisma.product.delete({ where: { id } })
   } catch (err) {
