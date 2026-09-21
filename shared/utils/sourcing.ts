@@ -8,10 +8,11 @@
  */
 export const DEFAULT_AVAILABILITY_DAYS = 2
 
-/** "X ngày" nếu có dữ liệu, null nếu không. */
+/** "~X ngày" (ước tính, không phải con số chính xác) nếu có dữ liệu, null nếu
+ * không. Dùng chung cho mọi chỗ hiển thị số ngày dự kiến có hàng/giao hàng. */
 export function formatDays(days: number | null | undefined): string | null {
   if (days == null) return null
-  return `${days} ngày`
+  return `~${days} ngày`
 }
 
 /** Số ngày dự kiến có hàng của 1 sản phẩm (hay mặc định "hàng có sẵn" nếu sản

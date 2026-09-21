@@ -254,7 +254,7 @@ useSeoMeta({ title: 'Thanh toán - Cá Nhà Biển' })
           <URadioGroup
             v-model="form.deliveryMode"
             :items="[
-              { label: `Giao 1 lần — chung 1 hoá đơn, dự kiến có hàng trong tối đa ${maxAvailabilityDays} ngày`, value: 'SINGLE' },
+              { label: `Giao 1 lần — chung 1 hoá đơn, dự kiến có hàng trong tối đa ${formatDays(maxAvailabilityDays)}`, value: 'SINGLE' },
               { label: `Giao nhiều lần — tách thành ${availabilityGroups.length} đợt theo thời gian có hàng`, value: 'SPLIT' },
             ]"
           />
