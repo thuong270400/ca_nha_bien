@@ -327,10 +327,10 @@ function submit() {
             <UInput v-model="variant.sku" />
           </UFormField>
           <div class="flex items-end justify-between gap-2">
-            <URadio
-              :model-value="variant.isDefault"
-              :value="true"
-              label="Mặc định"
+            <URadioGroup
+              :model-value="variant.isDefault ? idx : undefined"
+              :items="[{ label: 'Mặc định', value: idx }]"
+              size="sm"
               @update:model-value="setDefaultVariant(idx)"
             />
             <UButton
