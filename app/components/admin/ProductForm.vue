@@ -301,6 +301,9 @@ function submit() {
             Thêm biến thể
           </UButton>
         </div>
+        <p v-if="variants.length > 1" class="mt-1 text-sm text-muted">
+          Biến thể "Mặc định" là biến thể dùng để hiển thị giá/đơn vị trên card sản phẩm ở trang chủ, danh mục, tìm kiếm...
+        </p>
       </template>
       <div class="space-y-3">
         <div

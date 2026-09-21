@@ -43,11 +43,15 @@ const labelTags = computed(() => product.value.tags.filter(t => !t.showOnImage))
 // same logic used to derive Order.estimatedAvailabilityDays, so the card sets
 // the same expectation the customer will see confirmed at checkout.
 const availabilityDaysText = computed(() => formatDays(resolveAvailabilityDays(product.value.availabilityDays)))
-// Card shows the cheapest variant's price (not the denormalized default-variant
-// Product.price), so a product whose default variant isn't its cheapest one
-// still advertises its lowest price up front.
-const cheapestVariant = computed(() => (
-  product.value.variants.reduce<ProductVariant | null>(
+// Card shows the admin-picked variant (ProductForm's "Mặc định" radio —
+// isDefault) when the product has more than 1 variant, so the price/unit shown
+// up front is the one the admin wants to advertise, not just whichever happens
+// to be cheapest. Falls back to the lowest-priced variant if somehow none is
+// marked (createProduct/updateProduct always mark exactly one, so this is
+// just a defensive default).
+const displayVariant = computed(() => (
+  product.value.variants.find(v => v.isDefault)
+  ?? product.value.variants.reduce<ProductVariant | null>(
     (min, v) => (!min || Number(v.price) < Number(min.price)) ? v : min,
     null,
   )
@@ -56,7 +60,7 @@ const coverImage = computed(() => product.value.images[0]?.url ?? '/images/place
 const hoverImage = computed(() => product.value.images[1]?.url ?? null)
 const totalStock = computed(() => product.value.variants.reduce((sum, v) => sum + v.stock, 0))
 const discountPercent = computed(() => {
-  const variant = cheapestVariant.value
+  const variant = displayVariant.value
   const price = Number(variant?.price ?? product.value.price)
   const compareAt = variant?.compareAtPrice ? Number(variant.compareAtPrice) : (product.value.compareAtPrice ? Number(product.value.compareAtPrice) : null)
   if (!compareAt || compareAt <= price) return null
@@ -187,13 +191,13 @@ onUnmounted(stopShineLoop)
       <div class="mt-auto flex items-end justify-between gap-2 pt-2">
         <div class="min-w-0 flex-1">
           <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-            <span class="truncate text-sm font-bold text-primary">{{ formatVnd(cheapestVariant?.price ?? product.price) }}</span>
-            <span v-if="cheapestVariant?.compareAtPrice ?? product.compareAtPrice" class="truncate text-xs text-muted line-through">
-              {{ formatVnd(cheapestVariant?.compareAtPrice ?? product.compareAtPrice) }}
+            <span class="truncate text-sm font-bold text-primary">{{ formatVnd(displayVariant?.price ?? product.price) }}</span>
+            <span v-if="displayVariant?.compareAtPrice ?? product.compareAtPrice" class="truncate text-xs text-muted line-through">
+              {{ formatVnd(displayVariant?.compareAtPrice ?? product.compareAtPrice) }}
             </span>
           </div>
-          <p v-if="cheapestVariant" class="text-[11px] text-muted">
-            {{ unitLabel(cheapestVariant.unit) }}
+          <p v-if="displayVariant" class="text-[11px] text-muted">
+            {{ unitLabel(displayVariant.unit) }}
           </p>
         </div>
         <button
