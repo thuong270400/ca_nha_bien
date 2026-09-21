@@ -38,8 +38,8 @@ const form = reactive({
   deliveryMode: 'SINGLE' as 'SINGLE' | 'SPLIT',
 })
 
-// Nhóm sản phẩm trong giỏ theo số ngày dự kiến có cá (vd cá có sẵn ~2 ngày, cá
-// theo chuyến ~7 ngày) — chỉ khi có từ 2 nhóm trở lên mới cần hỏi khách chọn
+// Nhóm sản phẩm trong giỏ theo số ngày dự kiến có hàng (vd hàng có sẵn ~2 ngày,
+// hàng theo chuyến ~7 ngày) — chỉ khi có từ 2 nhóm trở lên mới cần hỏi khách chọn
 // giao 1 lần hay giao nhiều lần, xem shared/utils/sourcing.ts#groupByAvailabilityDays.
 const availabilityGroups = computed(() => cartStore.cart ? groupByAvailabilityDays(cartStore.cart.items) : [])
 const hasMultipleAvailabilityGroups = computed(() => availabilityGroups.value.length > 1)
@@ -249,19 +249,19 @@ useSeoMeta({ title: 'Thanh toán - Cá Nhà Biển' })
             Giao hàng
           </h2>
           <p class="mb-3 text-sm text-muted">
-            Đơn hàng có sản phẩm với thời gian dự kiến có cá khác nhau. Chọn cách giao phù hợp:
+            Đơn hàng có sản phẩm với thời gian dự kiến có hàng khác nhau. Chọn cách giao phù hợp:
           </p>
           <URadioGroup
             v-model="form.deliveryMode"
             :items="[
-              { label: `Giao 1 lần — chung 1 hoá đơn, dự kiến có cá trong tối đa ${maxAvailabilityDays} ngày`, value: 'SINGLE' },
-              { label: `Giao nhiều lần — tách thành ${availabilityGroups.length} đợt theo thời gian có cá`, value: 'SPLIT' },
+              { label: `Giao 1 lần — chung 1 hoá đơn, dự kiến có hàng trong tối đa ${maxAvailabilityDays} ngày`, value: 'SINGLE' },
+              { label: `Giao nhiều lần — tách thành ${availabilityGroups.length} đợt theo thời gian có hàng`, value: 'SPLIT' },
             ]"
           />
           <div v-if="form.deliveryMode === 'SPLIT'" class="mt-3 space-y-2">
             <div v-for="(group, idx) in availabilityGroups" :key="idx" class="rounded-lg bg-elevated p-3 text-sm">
               <p class="font-medium text-highlighted">
-                Đợt {{ idx + 1 }} — dự kiến có cá trong {{ formatDays(group.days) }}
+                Đợt {{ idx + 1 }} — dự kiến có hàng trong {{ formatDays(group.days) }}
               </p>
               <p class="text-muted">
                 {{ group.items.map(i => i.product.name).join(', ') }}

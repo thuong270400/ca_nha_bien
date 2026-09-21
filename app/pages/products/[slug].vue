@@ -205,7 +205,7 @@ useHead(() => ({
         </div>
         <p v-if="formatDays(product.availabilityDays)" class="mt-2 flex items-center gap-1.5 text-sm text-muted">
           <UIcon name="i-lucide-clock" class="size-4" />
-          <span>Dự kiến có cá: {{ formatDays(product.availabilityDays) }}</span>
+          <span>Dự kiến có hàng: {{ formatDays(product.availabilityDays) }}</span>
         </p>
         <div class="mt-6">
           <p class="mb-2 text-sm font-medium text-highlighted">

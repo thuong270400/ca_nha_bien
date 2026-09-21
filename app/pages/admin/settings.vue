@@ -95,7 +95,7 @@ useSeoMeta({ title: 'Cài đặt - Cá Nhà Biển Admin' })
         </div>
       </UFormField>
       <p class="text-xs text-muted">
-        Áp dụng chung cho tất cả sản phẩm — không còn cấu hình riêng theo từng phân loại nguồn cá. Chỉ hiển thị cho khách lúc tiến hành thanh toán, không dùng để tính toán gì (khác với số ngày dự kiến có cá của từng phân loại, dùng để nhóm đợt giao ở checkout).
+        Áp dụng chung cho tất cả sản phẩm — không cấu hình riêng theo từng sản phẩm. Chỉ hiển thị cho khách lúc tiến hành thanh toán, không dùng để tính toán gì (khác với số ngày dự kiến có hàng của từng sản phẩm, dùng để nhóm đợt giao ở checkout).
       </p>
       <UButton :loading="saving" @click="save">
         Lưu cài đặt

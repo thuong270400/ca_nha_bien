@@ -14,7 +14,7 @@ export function formatDays(days: number | null | undefined): string | null {
   return `${days} ngày`
 }
 
-/** Số ngày dự kiến có cá của 1 sản phẩm (hay mặc định "hàng có sẵn" nếu sản
+/** Số ngày dự kiến có hàng của 1 sản phẩm (hay mặc định "hàng có sẵn" nếu sản
  * phẩm chưa nhập) — dùng làm khoá nhóm đợt giao khi khách chọn "giao nhiều
  * lần" ở checkout (2 sản phẩm cùng số ngày này thì cùng 1 đợt) và để tính
  * Order.estimatedAvailabilityDays khi "giao 1 lần" (lấy số lớn nhất trong giỏ
@@ -32,7 +32,7 @@ export interface AvailabilityGroup<T> {
   items: T[]
 }
 
-/** Gộp các item (CartItem/OrderItem) có cùng số ngày dự kiến có cá vào 1 đợt
+/** Gộp các item (CartItem/OrderItem) có cùng số ngày dự kiến có hàng vào 1 đợt
  * giao — dùng khi khách chọn "giao nhiều lần". Item thiếu dữ liệu (đơn cũ trước
  * khi có tính năng này) dùng mức mặc định "hàng có sẵn". Sắp xếp theo số ngày
  * tăng dần (đợt có hàng sớm nhất trước). */

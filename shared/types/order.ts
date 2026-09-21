@@ -71,7 +71,7 @@ export interface OrderView {
   depositPercent: number | null
   /** Số ngày dự kiến giao hàng dài nhất trong đơn — null nghĩa là không sản phẩm nào khai báo. */
   estimatedAvailabilityDays: number | null
-  /** Khách chọn ở checkout khi giỏ hàng có nhiều khoảng ngày dự kiến có cá khác nhau. */
+  /** Khách chọn ở checkout khi giỏ hàng có nhiều khoảng ngày dự kiến có hàng khác nhau. */
   deliveryMode: OrderDeliveryMode
   paymentMethod: PaymentMethod
   paymentStatus: PaymentStatus

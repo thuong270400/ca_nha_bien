@@ -55,7 +55,7 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
     let subtotal = 0
     const orderItemsData: Prisma.OrderItemCreateManyOrderInput[] = []
     // Thời gian giao dự kiến của đơn (deliveryMode = SINGLE) = "xấu nhất" (chờ
-    // lâu nhất) trong số ngày dự kiến có cá của mọi sản phẩm trong giỏ, dùng max
+    // lâu nhất) trong số ngày dự kiến có hàng của mọi sản phẩm trong giỏ, dùng max
     // để không đánh giá thấp thời gian chờ thực tế. Sản phẩm chưa nhập số ngày
     // đóng góp mức mặc định "hàng có sẵn" (xem resolveAvailabilityDays). Số ngày
     // của từng item cũng được snapshot vào OrderItem để nhóm đợt giao khi khách

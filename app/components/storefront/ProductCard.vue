@@ -173,7 +173,7 @@ onUnmounted(stopShineLoop)
       </div>
       <p v-if="availabilityDaysText" class="flex items-center gap-1 text-xs font-semibold text-muted">
         <UIcon name="i-lucide-clock" class="size-3.5 shrink-0" />
-        <span class="truncate">Dự kiến có cá: {{ availabilityDaysText }}</span>
+        <span class="truncate">Dự kiến có hàng: {{ availabilityDaysText }}</span>
       </p>
       <div class="mt-auto flex items-end justify-between gap-2 pt-2">
         <div class="min-w-0 flex-1">
