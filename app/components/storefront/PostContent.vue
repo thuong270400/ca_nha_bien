@@ -22,6 +22,9 @@ const html = computed(() => toPostHtml(props.content))
 .post-content > * + * {
   margin-top: 1rem;
 }
+.post-content > :first-child {
+  margin-top: 0;
+}
 .post-content h1,
 .post-content h2,
 .post-content h3,

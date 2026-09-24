@@ -43,16 +43,24 @@ useCanonical(`/recipes/${slug}`)
     />
 
     <article class="mx-auto max-w-3xl">
-      <h1 class="text-2xl font-bold text-highlighted sm:text-3xl">
-        {{ post.title }}
-      </h1>
-      <p v-if="formattedDate" class="mt-2 text-sm text-muted">
-        {{ formattedDate }}
-      </p>
-
-      <div v-if="post.coverImageUrl" class="mt-6 aspect-video overflow-hidden rounded-xl bg-elevated">
-        <img :src="post.coverImageUrl" :alt="post.title" class="size-full object-cover">
-      </div>
+      <!-- 9 + 3 header row: the title column sets the row height, the cover (absolutely
+           positioned) stretches to fill it instead of pushing the row taller -->
+      <header class="grid grid-cols-12 gap-4 sm:gap-6">
+        <div :class="post.coverImageUrl ? 'col-span-9' : 'col-span-12'">
+          <h1 class="text-2xl font-bold text-highlighted sm:text-3xl">
+            {{ post.title }}
+          </h1>
+          <p v-if="formattedDate" class="mt-2 text-sm text-muted">
+            {{ formattedDate }}
+          </p>
+        </div>
+        <div v-if="post.coverImageUrl" class="relative col-span-3">
+          <!-- whole image, never cropped: shrinks to fit inside the column box, pinned top-right -->
+          <div class="absolute inset-0 flex items-start justify-end">
+            <img :src="post.coverImageUrl" :alt="post.title" class="max-h-full max-w-full rounded-lg object-contain">
+          </div>
+        </div>
+      </header>
 
       <StorefrontPostContent :content="post.content" class="mt-6" />
     </article>
