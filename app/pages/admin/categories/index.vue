@@ -10,8 +10,26 @@ const confirm = useConfirm()
 const tabItems = [
   { label: 'Danh mục sản phẩm', value: 'products' },
   { label: 'Danh mục mã giảm giá', value: 'coupons' },
+  { label: 'Danh mục bài viết', value: 'posts' },
 ]
-const activeTab = ref<string | number>('products')
+const route = useRoute()
+const activeTab = ref<string | number>(
+  tabItems.some(t => t.value === route.query.tab) ? route.query.tab as string : 'products',
+)
+
+const postCategoryManager = useTemplateRef('postCategoryManager')
+
+function onAddClick() {
+  if (activeTab.value === 'products') openCreate()
+  else if (activeTab.value === 'coupons') openCcCreate()
+  else postCategoryManager.value?.openCreate()
+}
+
+const addLabel = computed(() => ({
+  products: 'Thêm danh mục',
+  coupons: 'Thêm danh mục mã giảm giá',
+  posts: 'Thêm danh mục bài viết',
+} as Record<string, string>)[activeTab.value] ?? 'Thêm danh mục')
 
 // ---------------------------------------------------------------------------
 // Danh mục sản phẩm
@@ -268,11 +286,8 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
       <h1 class="text-xl font-bold text-highlighted">
         Danh mục
       </h1>
-      <UButton
-        icon="i-lucide-plus"
-        @click="activeTab === 'products' ? openCreate() : openCcCreate()"
-      >
-        {{ activeTab === 'products' ? 'Thêm danh mục' : 'Thêm danh mục mã giảm giá' }}
+      <UButton icon="i-lucide-plus" @click="onAddClick">
+        {{ addLabel }}
       </UButton>
     </div>
 
@@ -374,6 +389,8 @@ useSeoMeta({ title: 'Danh mục - Cá Nhà Biển Admin' })
         </tbody>
       </table>
     </div>
+
+    <AdminPostCategoryManager v-else-if="activeTab === 'posts'" ref="postCategoryManager" />
 
     <div v-else class="overflow-x-auto rounded-xl border border-default">
       <table class="w-full text-sm">

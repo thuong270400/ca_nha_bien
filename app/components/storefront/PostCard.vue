@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import type { Post } from '#shared/types/content'
+import type { PostListItem } from '#shared/types/content'
 
 const props = defineProps<{
-  post: Post
+  post: PostListItem
   to: string
+  /** Show the post's category name above the title (e.g. on Góc Biển search results that mix categories). */
+  showCategory?: boolean
 }>()
 
 const formattedDate = computed(() =>
@@ -17,13 +19,16 @@ const formattedDate = computed(() =>
       <img
         :src="post.coverImageUrl ?? '/images/placeholder-fish.svg'"
         :alt="post.title"
+        loading="lazy"
         class="size-full object-cover transition group-hover:scale-105"
       >
     </div>
     <div class="p-4">
-      <p v-if="formattedDate" class="text-xs text-muted">
-        {{ formattedDate }}
-      </p>
+      <div class="flex flex-wrap items-center gap-x-2 text-xs text-muted">
+        <span v-if="showCategory && post.category" class="font-semibold text-primary">{{ post.category.name }}</span>
+        <span v-if="showCategory && post.category && formattedDate" aria-hidden="true">·</span>
+        <span v-if="formattedDate">{{ formattedDate }}</span>
+      </div>
       <h3 class="mt-1 line-clamp-2 font-semibold text-highlighted">
         {{ post.title }}
       </h3>

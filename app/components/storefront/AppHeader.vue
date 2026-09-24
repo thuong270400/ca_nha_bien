@@ -17,6 +17,7 @@ const { contact } = useAppConfig()
 const navItems = computed(() => [
   { label: 'Tất cả sản phẩm', to: '/products' },
   ...(categories.value ?? []).map((c: Category) => ({ label: c.name, to: `/categories/${c.slug}` })),
+  { label: 'Góc Biển', to: '/goc-bien' },
 ])
 
 async function logout() {
@@ -77,6 +78,7 @@ async function logout() {
       </UPopover>
 
       <UButton to="/products" color="neutral" variant="link" label="Tất cả sản phẩm" />
+      <UButton to="/goc-bien" color="neutral" variant="link" label="Góc Biển" />
     </nav>
 
     <template #right>

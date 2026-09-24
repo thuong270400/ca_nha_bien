@@ -57,6 +57,7 @@ function sizeOf(size: string) {
               <li><NuxtLink to="/contact" class="hover:text-primary">Liên hệ</NuxtLink></li>
               <li><NuxtLink to="/policy#giao-hang" class="hover:text-primary">Chính sách giao hàng</NuxtLink></li>
               <li><NuxtLink to="/faq" class="hover:text-primary">Câu hỏi thường gặp</NuxtLink></li>
+              <li><NuxtLink to="/goc-bien" class="hover:text-primary">Góc Biển</NuxtLink></li>
               <li><NuxtLink to="/blog" class="hover:text-primary">Tin tức</NuxtLink></li>
               <li><NuxtLink to="/recipes" class="hover:text-primary">Tư vấn món ngon</NuxtLink></li>
             </ul>

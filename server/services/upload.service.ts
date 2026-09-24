@@ -18,7 +18,7 @@ interface UploadedFile {
   data: Buffer
 }
 
-export const UPLOAD_FOLDERS = ['products', 'posts', 'banners', 'social-links', 'dishes'] as const
+export const UPLOAD_FOLDERS = ['products', 'posts', 'post-categories', 'banners', 'social-links', 'dishes'] as const
 export type UploadFolder = typeof UPLOAD_FOLDERS[number]
 
 /**

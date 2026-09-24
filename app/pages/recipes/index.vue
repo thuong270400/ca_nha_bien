@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { PaginatedResult } from '#shared/types/catalog'
-import type { Post } from '#shared/types/content'
+import type { PostListItem } from '#shared/types/content'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,7 +11,7 @@ const listQuery = computed(() => ({
   limit: 12,
 }))
 
-const { data, status } = await useFetch<PaginatedResult<Post>>('/api/posts', {
+const { data, status } = await useFetch<PaginatedResult<PostListItem>>('/api/posts', {
   query: listQuery,
   key: 'recipe-posts',
 })

@@ -12,6 +12,15 @@ if (!post.value || post.value.type !== 'NEWS') {
   throw createError({ statusCode: 404, statusMessage: 'Không tìm thấy bài viết', fatal: true })
 }
 
+// Posts filed under a (visible) Góc Biển category are browsed from there, so the trail follows it.
+const breadcrumb = computed(() => {
+  const category = post.value?.category
+  const middle = category?.isActive
+    ? [{ label: 'Góc Biển', to: '/goc-bien' }, { label: category.name, to: `/goc-bien/${category.slug}` }]
+    : [{ label: 'Tin tức', to: '/blog' }]
+  return [{ label: 'Trang chủ', to: '/' }, ...middle, { label: post.value?.title ?? '' }]
+})
+
 const formattedDate = computed(() =>
   post.value?.publishedAt ? new Date(post.value.publishedAt).toLocaleDateString('vi-VN') : '',
 )
@@ -30,7 +39,7 @@ useCanonical(`/blog/${slug}`)
   <UContainer v-if="post" class="py-8">
     <UBreadcrumb
       class="mb-6"
-      :items="[{ label: 'Trang chủ', to: '/' }, { label: 'Tin tức', to: '/blog' }, { label: post.title }]"
+      :items="breadcrumb"
     />
 
     <article class="mx-auto max-w-3xl">
@@ -45,9 +54,7 @@ useCanonical(`/blog/${slug}`)
         <img :src="post.coverImageUrl" :alt="post.title" class="size-full object-cover">
       </div>
 
-      <p class="mt-6 whitespace-pre-line text-muted">
-        {{ post.content }}
-      </p>
+      <StorefrontPostContent :content="post.content" class="mt-6" />
     </article>
   </UContainer>
 </template>

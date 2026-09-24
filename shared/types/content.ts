@@ -1,5 +1,6 @@
 export type PostType = 'NEWS' | 'RECIPE'
 
+/** content is sanitized HTML from the admin editor (older posts may still be plain text — render via toPostHtml). */
 export interface Post {
   id: string
   title: string
@@ -8,9 +9,35 @@ export interface Post {
   content: string
   coverImageUrl: string | null
   type: PostType
+  categoryId: string | null
+  /** Included on list rows and the public detail endpoint; absent on the admin single-post GET. */
+  category?: PostCategoryRef | null
   isPublished: boolean
   publishedAt: string | null
   createdAt: string
+  updatedAt: string
+}
+
+/** List rows (GET /api/posts and /api/admin/posts) omit the (potentially large) HTML body. */
+export type PostListItem = Omit<Post, 'content'>
+
+export interface PostCategoryRef {
+  id: string
+  name: string
+  slug: string
+  isActive?: boolean
+}
+
+/** A "Góc Biển" post category. postCount counts published posts only on the storefront (activeOnly) listing. */
+export interface PostCategory {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  imageUrl: string | null
+  isActive: boolean
+  position: number
+  postCount: number
 }
 
 export interface BannerButton {
