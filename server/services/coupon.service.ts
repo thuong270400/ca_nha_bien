@@ -81,10 +81,11 @@ export function computeDiscount(coupon: CouponForDiscount, subtotal: number): nu
 type CouponClient = PrismaClient | Prisma.TransactionClient
 
 /** Coupons currently within their active window and usage limit — active, in date range, not exhausted. */
-async function fetchRedeemableCoupons() {
+async function fetchRedeemableCoupons(extraWhere: Prisma.CouponWhereInput = {}) {
   const now = new Date()
   const coupons = await prisma.coupon.findMany({
     where: {
+      ...extraWhere,
       isActive: true,
       AND: [
         { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
@@ -97,9 +98,9 @@ async function fetchRedeemableCoupons() {
   return coupons.filter(c => c.usageLimit === null || c.usedCount < c.usageLimit)
 }
 
-/** Promo listing for the landing page's coupon ticket row — not tied to any cart, so no eligibility/discount computed. */
+/** Promo listing for the landing page's coupon ticket row (only coupons flagged `showOnHomepage`) — not tied to any cart, so no eligibility/discount computed. */
 export async function listPromotedCoupons() {
-  const coupons = await fetchRedeemableCoupons()
+  const coupons = await fetchRedeemableCoupons({ showOnHomepage: true })
   return coupons.map(coupon => ({
     code: coupon.code,
     type: coupon.type,

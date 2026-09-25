@@ -48,6 +48,7 @@ const form = reactive({
   startsAt: '',
   expiresAt: '',
   isActive: true,
+  showOnHomepage: true,
   categoryId: '',
 })
 
@@ -66,6 +67,7 @@ function openCreate() {
   form.startsAt = ''
   form.expiresAt = ''
   form.isActive = true
+  form.showOnHomepage = true
   form.categoryId = categories.value?.[0]?.id ?? ''
   open.value = true
 }
@@ -81,6 +83,7 @@ function openEdit(coupon: CouponView) {
   form.startsAt = toDateInput(coupon.startsAt)
   form.expiresAt = toDateInput(coupon.expiresAt)
   form.isActive = coupon.isActive
+  form.showOnHomepage = coupon.showOnHomepage
   form.categoryId = coupon.categoryId
   open.value = true
 }
@@ -98,6 +101,7 @@ async function save() {
       startsAt: form.startsAt || undefined,
       expiresAt: form.expiresAt || undefined,
       isActive: form.isActive,
+      showOnHomepage: form.showOnHomepage,
       categoryId: form.categoryId,
     }
     if (editing.value) {
@@ -121,6 +125,19 @@ async function toggleActive(coupon: CouponView) {
   togglingId.value = coupon.id
   try {
     await $fetch(`/api/admin/coupons/${coupon.id}`, { method: 'PATCH', body: { isActive: !coupon.isActive } })
+    await refresh()
+  } catch (err) {
+    const message = (err as { data?: { message?: string } })?.data?.message ?? 'Không thể cập nhật mã giảm giá'
+    toast.add({ title: 'Lỗi', description: message, color: 'error' })
+  } finally {
+    togglingId.value = null
+  }
+}
+
+async function toggleHomepage(coupon: CouponView) {
+  togglingId.value = coupon.id
+  try {
+    await $fetch(`/api/admin/coupons/${coupon.id}`, { method: 'PATCH', body: { showOnHomepage: !coupon.showOnHomepage } })
     await refresh()
   } catch (err) {
     const message = (err as { data?: { message?: string } })?.data?.message ?? 'Không thể cập nhật mã giảm giá'
@@ -188,6 +205,9 @@ useSeoMeta({ title: 'Mã giảm giá - Cá Nhà Biển Admin' })
             <th class="px-4 py-3">
               Trạng thái
             </th>
+            <th class="px-4 py-3">
+              Trang chủ
+            </th>
             <th class="px-4 py-3" />
           </tr>
         </thead>
@@ -213,6 +233,14 @@ useSeoMeta({ title: 'Mã giảm giá - Cá Nhà Biển Admin' })
                 {{ coupon.isActive ? 'Hoạt động' : 'Vô hiệu' }}
               </UBadge>
             </td>
+            <td class="px-4 py-3">
+              <USwitch
+                :model-value="coupon.showOnHomepage"
+                :disabled="togglingId === coupon.id"
+                :aria-label="`Hiện mã ${coupon.code} ở trang chủ`"
+                @update:model-value="toggleHomepage(coupon)"
+              />
+            </td>
             <td class="px-4 py-3 text-right">
               <div class="flex justify-end gap-2">
                 <UButton
@@ -237,7 +265,7 @@ useSeoMeta({ title: 'Mã giảm giá - Cá Nhà Biển Admin' })
             </td>
           </tr>
           <tr v-if="!data?.data.length">
-            <td colspan="7" class="px-4 py-10 text-center text-muted">
+            <td colspan="8" class="px-4 py-10 text-center text-muted">
               Chưa có mã giảm giá nào
             </td>
           </tr>
@@ -287,6 +315,11 @@ useSeoMeta({ title: 'Mã giảm giá - Cá Nhà Biển Admin' })
             </UFormField>
           </div>
           <UCheckbox v-model="form.isActive" label="Kích hoạt" />
+          <UCheckbox
+            v-model="form.showOnHomepage"
+            label="Hiện ở trang chủ"
+            description="Tắt thì mã không hiện trong dải phiếu giảm giá ở trang chủ, nhưng khách vẫn dùng được khi thanh toán"
+          />
         </div>
       </template>
       <template #footer>

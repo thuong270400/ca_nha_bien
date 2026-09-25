@@ -241,7 +241,7 @@ useHead(() => ({
               :disabled="selectedVariant.stock === 0"
             />
             <span class="text-sm text-muted">
-              {{ selectedVariant.stock > 0 ? `Còn ${selectedVariant.stock} ${selectedVariant.unit}` : 'Hết hàng' }}
+              {{ selectedVariant.stock > 0 ? `Còn ${selectedVariant.stock}` : 'Hết hàng' }}
             </span>
           </div>
         </div>

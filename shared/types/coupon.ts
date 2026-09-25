@@ -20,6 +20,7 @@ export interface CouponView {
   startsAt: string | null
   expiresAt: string | null
   isActive: boolean
+  showOnHomepage: boolean
   createdAt: string
   categoryId: string
   category: CouponCategoryView
