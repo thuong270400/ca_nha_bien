@@ -113,9 +113,12 @@ export async function listPromotedCoupons() {
   }))
 }
 
-/** Currently redeemable coupons (active, within date window, under usage limit) for the storefront's "view coupons" picker. */
+/**
+ * Currently redeemable coupons (active, within date window, under usage limit) for the storefront's "view coupons" picker.
+ * Coupons hidden from the homepage (`showOnHomepage: false`) are hidden here too — they stay redeemable by typing the code.
+ */
 export async function listAvailableCoupons(subtotal: number) {
-  const coupons = await fetchRedeemableCoupons()
+  const coupons = await fetchRedeemableCoupons({ showOnHomepage: true })
 
   return coupons
     .map((coupon) => {
