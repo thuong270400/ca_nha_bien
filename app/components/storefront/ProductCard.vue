@@ -9,6 +9,7 @@ const wishlistStore = useWishlistStore()
 const router = useRouter()
 const wishlisting = ref(false)
 const quickBuyOpen = ref(false)
+const previewOpen = ref(false)
 const editOpen = ref(false)
 
 const isAdmin = computed(() => user.value?.role === 'ADMIN')
@@ -90,130 +91,143 @@ function stopShineLoop() {
 }
 
 onUnmounted(stopShineLoop)
+
+// Plain left-click opens the detail popup (ProductPreviewModal) instead of
+// navigating; modified clicks (Ctrl/Cmd/Shift/middle) keep the native link
+// behavior so "open in new tab" still works.
+function onCardClick(event: MouseEvent) {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+  event.preventDefault()
+  previewOpen.value = true
+}
 </script>
 
 <template>
-  <NuxtLink
-    :to="`/products/${product.slug}`"
-    class="group relative flex flex-col overflow-hidden rounded-xl border border-default bg-default transition hover:shadow-lg"
-    @mouseenter="startShineLoop"
-    @mouseleave="stopShineLoop"
-  >
-    <div class="relative aspect-square overflow-hidden bg-default">
-      <img
-        :src="coverImage"
-        :alt="product.images[0]?.alt ?? product.name"
-        class="absolute inset-0 size-full object-cover transition-all duration-500 ease-out"
-        :class="hoverImage ? 'group-hover:opacity-0' : 'group-hover:-translate-y-4'"
-        loading="lazy"
-      >
-      <img
-        v-if="hoverImage"
-        :src="hoverImage"
-        :alt="product.images[1]?.alt ?? product.name"
-        class="absolute inset-0 size-full object-cover opacity-0 transition-all duration-500 ease-out group-hover:-translate-y-4 group-hover:opacity-100"
-        loading="lazy"
-      >
-      <div v-if="imageTags.length || discountPercent" class="absolute left-2 top-2 flex flex-col items-start gap-1">
-        <span
-          v-for="tag in imageTags"
-          :key="tag.id"
-          class="rounded px-2 py-0.5 text-[11px] font-semibold"
-          :style="{ backgroundColor: tag.color, color: tagTextColor(tag.color) }"
+  <NuxtLink v-slot="{ href }" :to="`/products/${product.slug}`" custom>
+    <a
+      :href="href ?? undefined"
+      class="group relative flex flex-col overflow-hidden rounded-xl border border-default bg-default transition hover:shadow-lg"
+      @click="onCardClick"
+      @mouseenter="startShineLoop"
+      @mouseleave="stopShineLoop"
+    >
+      <div class="relative aspect-square overflow-hidden bg-default">
+        <img
+          :src="coverImage"
+          :alt="product.images[0]?.alt ?? product.name"
+          class="absolute inset-0 size-full object-cover transition-all duration-500 ease-out"
+          :class="hoverImage ? 'group-hover:opacity-0' : 'group-hover:-translate-y-4'"
+          loading="lazy"
         >
-          {{ tag.name }}
-        </span>
-        <UBadge v-if="discountPercent" color="error">
-          -{{ discountPercent }}%
-        </UBadge>
-      </div>
-      <UBadge
-        v-if="totalStock === 0"
-        color="neutral"
-        class="absolute right-2 top-2"
-      >
-        Hết hàng
-      </UBadge>
-      <button
-        type="button"
-        class="absolute bottom-2 right-2 flex size-8 items-center justify-center rounded-full bg-default/90 shadow transition hover:scale-110"
-        :aria-label="isWishlisted ? 'Bỏ khỏi yêu thích' : 'Thêm vào yêu thích'"
-        @click.stop.prevent="onToggleWishlist"
-      >
-        <UIcon
-          name="i-lucide-heart"
-          class="size-4"
-          :class="isWishlisted ? 'text-error' : 'text-muted'"
-          :style="isWishlisted ? { fill: 'currentColor' } : undefined"
-        />
-      </button>
-      <button
-        v-if="isAdmin"
-        type="button"
-        class="absolute bottom-2 left-2 flex size-8 items-center justify-center rounded-full bg-default/90 shadow transition hover:scale-110"
-        aria-label="Chỉnh sửa sản phẩm"
-        title="Chỉnh sửa sản phẩm"
-        @click.stop.prevent="editOpen = true"
-      >
-        <UIcon name="i-lucide-pencil" class="size-4 text-primary" />
-      </button>
-
-      <span
-        v-if="hasShine"
-        :key="shineRunId"
-        class="shine-sweep pointer-events-none absolute inset-0 transition-transform duration-500 ease-out group-hover:-translate-y-4"
-        :style="{ '--shine-delay': shineDelay }"
-        aria-hidden="true"
-      />
-    </div>
-
-    <div class="flex flex-1 flex-col gap-1 p-3">
-      <p class="text-[11px] text-muted">
-        {{ product.categories.map(c => c.name).join(', ') }}
-      </p>
-      <h3 class="line-clamp-2 text-sm font-medium text-highlighted">
-        {{ product.name }}
-      </h3>
-      <div v-if="labelTags.length" class="flex flex-wrap gap-1">
-        <span
-          v-for="tag in labelTags"
-          :key="tag.id"
-          class="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium"
-          :style="{ backgroundColor: tag.color, color: tagTextColor(tag.color) }"
+        <img
+          v-if="hoverImage"
+          :src="hoverImage"
+          :alt="product.images[1]?.alt ?? product.name"
+          class="absolute inset-0 size-full object-cover opacity-0 transition-all duration-500 ease-out group-hover:-translate-y-4 group-hover:opacity-100"
+          loading="lazy"
         >
-          {{ tag.name }}
-        </span>
-      </div>
-      <p v-if="availabilityDaysText" class="flex items-center gap-1 text-xs font-semibold text-muted">
-        <UIcon name="i-lucide-clock" class="size-3.5 shrink-0" />
-        <span class="truncate">Dự kiến có hàng: {{ availabilityDaysText }}</span>
-      </p>
-      <div class="mt-auto flex items-end justify-between gap-2 pt-2">
-        <div class="min-w-0 flex-1">
-          <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-            <span class="truncate text-sm font-bold text-primary">{{ formatVnd(displayVariant?.price ?? product.price) }}</span>
-            <span v-if="displayVariant?.compareAtPrice ?? product.compareAtPrice" class="truncate text-xs text-muted line-through">
-              {{ formatVnd(displayVariant?.compareAtPrice ?? product.compareAtPrice) }}
-            </span>
-          </div>
-          <p v-if="displayVariant" class="text-[11px] text-muted">
-            {{ unitLabel(displayVariant.unit) }}
-          </p>
+        <div v-if="imageTags.length || discountPercent" class="absolute left-2 top-2 flex flex-col items-start gap-1">
+          <span
+            v-for="tag in imageTags"
+            :key="tag.id"
+            class="rounded px-2 py-0.5 text-[11px] font-semibold"
+            :style="{ backgroundColor: tag.color, color: tagTextColor(tag.color) }"
+          >
+            {{ tag.name }}
+          </span>
+          <UBadge v-if="discountPercent" color="error">
+            -{{ discountPercent }}%
+          </UBadge>
         </div>
+        <UBadge
+          v-if="totalStock === 0"
+          color="neutral"
+          class="absolute right-2 top-2"
+        >
+          Hết hàng
+        </UBadge>
         <button
           type="button"
-          class="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-inverted shadow transition hover:scale-110 hover:bg-secondary/90 disabled:pointer-events-none disabled:opacity-50"
-          :disabled="totalStock === 0"
-          :title="totalStock === 0 ? 'Hết hàng' : 'Chọn mua'"
-          :aria-label="totalStock === 0 ? 'Hết hàng' : 'Chọn mua'"
-          @click.stop.prevent="quickBuyOpen = true"
+          class="absolute bottom-2 right-2 flex size-8 items-center justify-center rounded-full bg-default/90 shadow transition hover:scale-110"
+          :aria-label="isWishlisted ? 'Bỏ khỏi yêu thích' : 'Thêm vào yêu thích'"
+          @click.stop.prevent="onToggleWishlist"
         >
-          <UIcon name="i-lucide-shopping-bag" class="size-4" />
+          <UIcon
+            name="i-lucide-heart"
+            class="size-4"
+            :class="isWishlisted ? 'text-error' : 'text-muted'"
+            :style="isWishlisted ? { fill: 'currentColor' } : undefined"
+          />
         </button>
+        <button
+          v-if="isAdmin"
+          type="button"
+          class="absolute bottom-2 left-2 flex size-8 items-center justify-center rounded-full bg-default/90 shadow transition hover:scale-110"
+          aria-label="Chỉnh sửa sản phẩm"
+          title="Chỉnh sửa sản phẩm"
+          @click.stop.prevent="editOpen = true"
+        >
+          <UIcon name="i-lucide-pencil" class="size-4 text-primary" />
+        </button>
+
+        <span
+          v-if="hasShine"
+          :key="shineRunId"
+          class="shine-sweep pointer-events-none absolute inset-0 transition-transform duration-500 ease-out group-hover:-translate-y-4"
+          :style="{ '--shine-delay': shineDelay }"
+          aria-hidden="true"
+        />
       </div>
-    </div>
+
+      <div class="flex flex-1 flex-col gap-1 p-3">
+        <p class="text-[11px] text-muted">
+          {{ product.categories.map(c => c.name).join(', ') }}
+        </p>
+        <h3 class="line-clamp-2 text-sm font-medium text-highlighted">
+          {{ product.name }}
+        </h3>
+        <div v-if="labelTags.length" class="flex flex-wrap gap-1">
+          <span
+            v-for="tag in labelTags"
+            :key="tag.id"
+            class="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium"
+            :style="{ backgroundColor: tag.color, color: tagTextColor(tag.color) }"
+          >
+            {{ tag.name }}
+          </span>
+        </div>
+        <p v-if="availabilityDaysText" class="flex items-center gap-1 text-xs font-semibold text-muted">
+          <UIcon name="i-lucide-clock" class="size-3.5 shrink-0" />
+          <span class="truncate">Dự kiến có hàng: {{ availabilityDaysText }}</span>
+        </p>
+        <div class="mt-auto flex items-end justify-between gap-2 pt-2">
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+              <span class="truncate text-sm font-bold text-primary">{{ formatVnd(displayVariant?.price ?? product.price) }}</span>
+              <span v-if="displayVariant?.compareAtPrice ?? product.compareAtPrice" class="truncate text-xs text-muted line-through">
+                {{ formatVnd(displayVariant?.compareAtPrice ?? product.compareAtPrice) }}
+              </span>
+            </div>
+            <p v-if="displayVariant" class="text-[11px] text-muted">
+              {{ unitLabel(displayVariant.unit) }}
+            </p>
+          </div>
+          <button
+            type="button"
+            class="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-inverted shadow transition hover:scale-110 hover:bg-secondary/90 disabled:pointer-events-none disabled:opacity-50"
+            :disabled="totalStock === 0"
+            :title="totalStock === 0 ? 'Hết hàng' : 'Chọn mua'"
+            :aria-label="totalStock === 0 ? 'Hết hàng' : 'Chọn mua'"
+            @click.stop.prevent="quickBuyOpen = true"
+          >
+            <UIcon name="i-lucide-shopping-bag" class="size-4" />
+          </button>
+        </div>
+      </div>
+    </a>
   </NuxtLink>
 
+  <StorefrontProductPreviewModal v-model:open="previewOpen" :slug="product.slug" />
   <StorefrontProductQuickBuyModal v-model:open="quickBuyOpen" :product="product" />
   <StorefrontProductEditDialog
     v-if="isAdmin"

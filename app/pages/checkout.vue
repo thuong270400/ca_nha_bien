@@ -35,15 +35,18 @@ const form = reactive({
   addressId: undefined as string | undefined,
   saveAddress: false,
   paymentMethod: 'COD' as 'COD' | 'BANK_TRANSFER',
-  deliveryMode: 'SINGLE' as 'SINGLE' | 'SPLIT',
 })
 
-// Nhóm sản phẩm trong giỏ theo số ngày dự kiến có hàng (vd hàng có sẵn ~2 ngày,
-// hàng theo chuyến ~7 ngày) — chỉ khi có từ 2 nhóm trở lên mới cần hỏi khách chọn
-// giao 1 lần hay giao nhiều lần, xem shared/utils/sourcing.ts#groupByAvailabilityDays.
+// Đơn luôn giao 1 lần (deliveryMode mặc định SINGLE) — thời gian có hàng của cả
+// đơn = số ngày dự kiến có hàng lâu nhất trong giỏ, khớp với cách
+// order.service.ts tính Order.estimatedAvailabilityDays.
 const availabilityGroups = computed(() => cartStore.cart ? groupByAvailabilityDays(cartStore.cart.items) : [])
-const hasMultipleAvailabilityGroups = computed(() => availabilityGroups.value.length > 1)
 const maxAvailabilityDays = computed(() => availabilityGroups.value.reduce((max, g) => Math.max(max, g.days), 0))
+const totalDeliveryDays = computed(() => {
+  const deliveryDays = deliverySetting.value?.deliveryDays
+  if (deliveryDays == null) return null
+  return maxAvailabilityDays.value + deliveryDays
+})
 
 const selectedAddressId = ref<string | undefined>(undefined)
 
@@ -244,32 +247,6 @@ useSeoMeta({ title: 'Thanh toán - Cá Nhà Biển' })
           />
         </div>
 
-        <div v-if="hasMultipleAvailabilityGroups" class="rounded-xl border border-default p-5">
-          <h2 class="mb-2 font-semibold text-highlighted">
-            Giao hàng
-          </h2>
-          <p class="mb-3 text-sm text-muted">
-            Đơn hàng có sản phẩm với thời gian dự kiến có hàng khác nhau. Chọn cách giao phù hợp:
-          </p>
-          <URadioGroup
-            v-model="form.deliveryMode"
-            :items="[
-              { label: `Giao 1 lần — chung 1 hoá đơn, dự kiến có hàng trong tối đa ${formatDays(maxAvailabilityDays)}`, value: 'SINGLE' },
-              { label: `Giao nhiều lần — tách thành ${availabilityGroups.length} đợt theo thời gian có hàng`, value: 'SPLIT' },
-            ]"
-          />
-          <div v-if="form.deliveryMode === 'SPLIT'" class="mt-3 space-y-2">
-            <div v-for="(group, idx) in availabilityGroups" :key="idx" class="rounded-lg bg-elevated p-3 text-sm">
-              <p class="font-medium text-highlighted">
-                Đợt {{ idx + 1 }} — dự kiến có hàng trong {{ formatDays(group.days) }}
-              </p>
-              <p class="text-muted">
-                {{ group.items.map(i => i.product.name).join(', ') }}
-              </p>
-            </div>
-          </div>
-        </div>
-
         <div class="rounded-xl border border-default p-5">
           <h2 class="mb-4 font-semibold text-highlighted">
             Phương thức thanh toán
@@ -288,10 +265,20 @@ useSeoMeta({ title: 'Thanh toán - Cá Nhà Biển' })
             <UIcon name="i-lucide-circle-alert" class="mt-0.5 size-4 shrink-0" />
             <span>Bạn chỉ cần chuyển khoản trước {{ formatVnd(depositAmount) }} khi đặt hàng, phần còn lại {{ formatVnd(total - depositAmount) }} sẽ thu sau.</span>
           </p>
-          <p v-if="deliveryDaysText" class="mt-3 flex items-center gap-1.5 text-sm text-muted">
-            <UIcon name="i-lucide-truck" class="size-4 shrink-0" />
-            <span>Thời gian dự kiến giao hàng: {{ deliveryDaysText }}</span>
-          </p>
+          <div class="mt-3 space-y-1.5 text-sm text-muted">
+            <p v-if="maxAvailabilityDays" class="flex items-center gap-1.5">
+              <UIcon name="i-lucide-package-check" class="size-4 shrink-0" />
+              <span>Dự kiến có hàng trong tối đa {{ formatDays(maxAvailabilityDays) }}</span>
+            </p>
+            <p v-if="deliveryDaysText" class="flex items-center gap-1.5">
+              <UIcon name="i-lucide-truck" class="size-4 shrink-0" />
+              <span>Thời gian dự kiến giao hàng: {{ deliveryDaysText }}</span>
+            </p>
+            <p v-if="totalDeliveryDays != null" class="flex items-center gap-1.5 font-medium text-highlighted">
+              <UIcon name="i-lucide-clock" class="size-4 shrink-0" />
+              <span>Tổng thời gian: {{ formatDays(totalDeliveryDays) }}</span>
+            </p>
+          </div>
         </div>
       </div>
 
