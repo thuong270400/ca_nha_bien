@@ -1,9 +1,9 @@
-import type { Prisma, PrismaClient } from '../generated/prisma/client'
+import type { Prisma } from '../generated/prisma/client'
 import { prisma } from '../utils/prisma'
 import { getShippingSettings, SETTINGS_ID } from '../utils/shipping'
 import type { SettingUpdateInput } from '../utils/schemas/setting.schema'
 
-type SettingClient = PrismaClient | Prisma.TransactionClient
+type SettingClient = typeof prisma | Prisma.TransactionClient
 
 /**
  * Tài khoản ngân hàng nhận chuyển khoản qua VietQR — dùng trực tiếp để dựng QR

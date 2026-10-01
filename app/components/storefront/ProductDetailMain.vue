@@ -28,13 +28,13 @@ const selectedVariant = computed(() =>
   product.variants.find(v => v.id === selectedVariantId.value),
 )
 
-const discountPercent = computed(() => {
+const discountAmount = computed(() => {
   const variant = selectedVariant.value
   if (!variant?.compareAtPrice) return null
   const price = Number(variant.price)
   const compareAt = Number(variant.compareAtPrice)
   if (compareAt <= price) return null
-  return Math.round((1 - price / compareAt) * 100)
+  return compareAt - price
 })
 
 watch(selectedVariantId, () => { quantity.value = 1 })
@@ -153,8 +153,8 @@ async function addToCart() {
         <span v-if="selectedVariant.compareAtPrice" class="text-lg text-muted line-through">
           {{ formatVnd(selectedVariant.compareAtPrice) }}
         </span>
-        <UBadge v-if="discountPercent" color="error">
-          -{{ discountPercent }}%
+        <UBadge v-if="discountAmount" color="error">
+          {{ formatDiscountVnd(discountAmount) }}
         </UBadge>
       </div>
       <p v-if="formatDays(product.availabilityDays)" class="mt-2 flex items-center gap-1.5 text-sm text-muted">

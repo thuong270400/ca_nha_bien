@@ -34,6 +34,7 @@ const form = reactive({
   status: props.initial?.status ?? 'ACTIVE',
   isFeatured: props.initial?.isFeatured ?? false,
   availabilityDays: props.initial?.availabilityDays ?? undefined,
+  importPrice: props.initial?.importPrice != null ? Number(props.initial.importPrice) : undefined,
 })
 
 const categoryIds = ref<string[]>(props.initial?.categories.map(c => c.id) ?? [])
@@ -178,6 +179,7 @@ function submit() {
       position: idx,
     })),
     availabilityDays: form.availabilityDays ?? null,
+    importPrice: form.importPrice ?? null,
   })
 }
 </script>
@@ -344,6 +346,23 @@ function submit() {
           </div>
         </div>
       </div>
+    </UCard>
+
+    <UCard>
+      <template #header>
+        <h2 class="font-semibold text-highlighted">
+          Nhập kho
+        </h2>
+        <p class="text-sm text-muted">
+          Thông tin nội bộ — chỉ admin thấy, không hiển thị cho khách.
+        </p>
+      </template>
+      <UFormField label="Giá nhập kho tại cảng">
+        <div class="flex items-center gap-2">
+          <UInputNumber v-model="form.importPrice" :min="0" :step="1000" class="w-full" />
+          <span class="shrink-0 text-sm text-muted">đ</span>
+        </div>
+      </UFormField>
     </UCard>
 
     <UCard>

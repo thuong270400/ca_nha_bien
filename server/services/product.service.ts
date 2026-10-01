@@ -90,6 +90,7 @@ export async function listProducts(query: ProductListQuery, opts: { includeInact
       skip: (query.page - 1) * query.limit,
       take: query.limit,
       include: productInclude,
+      omit: { importPrice: !opts.includeInactive },
     }),
     prisma.product.count({ where }),
   ])
@@ -105,10 +106,14 @@ export async function listProducts(query: ProductListQuery, opts: { includeInact
   }
 }
 
+/** Admin-only: bật lại `importPrice` bị ẩn bởi global omit (server/utils/prisma.ts). */
+const adminProductOmit = { importPrice: false } as const
+
 export async function getProductById(id: string, opts: { includeInactive?: boolean } = {}) {
   const product = await prisma.product.findFirst({
     where: { id, ...(opts.includeInactive ? {} : { deletedAt: null, status: 'ACTIVE' }) },
     include: productInclude,
+    omit: { importPrice: !opts.includeInactive },
   })
   if (!product) throw Errors.notFound('Không tìm thấy sản phẩm')
   return product
@@ -190,6 +195,7 @@ export async function createProduct(input: ProductCreateInput) {
         status: input.status ?? 'ACTIVE',
         isFeatured: input.isFeatured ?? false,
         availabilityDays: input.availabilityDays ?? undefined,
+        importPrice: input.importPrice ?? undefined,
         categories: { connect: input.categoryIds.map(id => ({ id })) },
         price: defaultVariant.price,
         compareAtPrice: defaultVariant.compareAtPrice,
@@ -221,6 +227,7 @@ export async function createProduct(input: ProductCreateInput) {
           : undefined,
       },
       include: productInclude,
+      omit: adminProductOmit,
     })
   })
 }
@@ -255,6 +262,7 @@ export async function updateProduct(id: string, input: ProductUpdateInput) {
         deletedAt: input.status === 'ACTIVE' ? null : undefined,
         isFeatured: input.isFeatured,
         availabilityDays: input.availabilityDays,
+        importPrice: input.importPrice,
         categories: input.categoryIds ? { set: input.categoryIds.map(id => ({ id })) } : undefined,
         price: defaultVariant.price,
         compareAtPrice: defaultVariant.compareAtPrice,
@@ -262,6 +270,7 @@ export async function updateProduct(id: string, input: ProductUpdateInput) {
         tags: input.tagIds ? { set: input.tagIds.map(tagId => ({ id: tagId })) } : undefined,
       },
       include: productInclude,
+      omit: adminProductOmit,
     })
 
     return { product, removedImageUrls }

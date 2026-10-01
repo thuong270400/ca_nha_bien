@@ -60,12 +60,12 @@ const displayVariant = computed(() => (
 const coverImage = computed(() => product.value.images[0]?.url ?? '/images/placeholder-fish.svg')
 const hoverImage = computed(() => product.value.images[1]?.url ?? null)
 const totalStock = computed(() => product.value.variants.reduce((sum, v) => sum + v.stock, 0))
-const discountPercent = computed(() => {
+const discountAmount = computed(() => {
   const variant = displayVariant.value
   const price = Number(variant?.price ?? product.value.price)
   const compareAt = variant?.compareAtPrice ? Number(variant.compareAtPrice) : (product.value.compareAtPrice ? Number(product.value.compareAtPrice) : null)
   if (!compareAt || compareAt <= price) return null
-  return Math.round((1 - price / compareAt) * 100)
+  return compareAt - price
 })
 
 const hasShine = computed(() => totalStock.value > 0)
@@ -126,7 +126,7 @@ function onCardClick(event: MouseEvent) {
           class="absolute inset-0 size-full object-cover opacity-0 transition-all duration-500 ease-out group-hover:-translate-y-4 group-hover:opacity-100"
           loading="lazy"
         >
-        <div v-if="imageTags.length || discountPercent" class="absolute left-2 top-2 flex flex-col items-start gap-1">
+        <div v-if="imageTags.length || discountAmount" class="absolute left-2 top-2 flex flex-col items-start gap-1">
           <span
             v-for="tag in imageTags"
             :key="tag.id"
@@ -135,8 +135,8 @@ function onCardClick(event: MouseEvent) {
           >
             {{ tag.name }}
           </span>
-          <UBadge v-if="discountPercent" color="error">
-            -{{ discountPercent }}%
+          <UBadge v-if="discountAmount" color="error">
+            {{ formatDiscountVnd(discountAmount) }}
           </UBadge>
         </div>
         <UBadge

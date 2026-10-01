@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient } from '../generated/prisma/client'
+import type { Prisma } from '../generated/prisma/client'
 import { prisma } from './prisma'
 
 /** Fixed id of the singleton `Setting` row — see prisma/schema.prisma. */
@@ -7,7 +7,7 @@ export const SETTINGS_ID = 'default'
 export const DEFAULT_SHIPPING_FEE = 50_000
 export const DEFAULT_FREE_SHIPPING_THRESHOLD = 500_000
 
-type ShippingClient = PrismaClient | Prisma.TransactionClient
+type ShippingClient = typeof prisma | Prisma.TransactionClient
 
 export async function getShippingSettings(client: ShippingClient = prisma) {
   const setting = await client.setting.findUnique({ where: { id: SETTINGS_ID } })

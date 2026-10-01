@@ -80,6 +80,8 @@ export interface Product {
   tags: Tag[]
   suggestedDishes: SuggestedDish[]
   availabilityDays: number | null
+  /** Giá nhập kho tại cảng — chỉ có trong response cho admin. */
+  importPrice?: string | null
 }
 
 export interface ProductDetail extends Product {

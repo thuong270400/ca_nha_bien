@@ -48,6 +48,8 @@ export const productCreateSchema = z.object({
   suggestedDishes: z.array(suggestedDishSchema).optional(),
   /** Số ngày dự kiến có hàng do admin tự nhập — null xoá về mặc định "Có sẵn", omit khi update giữ nguyên. */
   availabilityDays: z.coerce.number().int().min(0).nullable().optional(),
+  /** Giá nhập kho tại cảng, chỉ admin thấy — null xoá, omit khi update giữ nguyên. */
+  importPrice: z.coerce.number().nonnegative().nullable().optional(),
 })
 
 export const productUpdateSchema = productCreateSchema.partial().extend({

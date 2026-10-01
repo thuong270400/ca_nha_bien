@@ -26,13 +26,13 @@ const selectedVariant = computed(() => product.variants.find(v => v.id === selec
 
 const coverImage = computed(() => product.images[0]?.url ?? '/images/placeholder-fish.svg')
 
-const discountPercent = computed(() => {
+const discountAmount = computed(() => {
   const variant = selectedVariant.value
   if (!variant?.compareAtPrice) return null
   const price = Number(variant.price)
   const compareAt = Number(variant.compareAtPrice)
   if (compareAt <= price) return null
-  return Math.round((1 - price / compareAt) * 100)
+  return compareAt - price
 })
 
 watch(selectedVariantId, () => { quantity.value = 1 })
@@ -81,8 +81,8 @@ async function buyNow() {
             <span v-if="selectedVariant?.compareAtPrice" class="text-sm text-muted line-through">
               {{ formatVnd(selectedVariant.compareAtPrice) }}
             </span>
-            <UBadge v-if="discountPercent" color="error" size="sm">
-              -{{ discountPercent }}%
+            <UBadge v-if="discountAmount" color="error" size="sm">
+              {{ formatDiscountVnd(discountAmount) }}
             </UBadge>
           </div>
           <p class="mt-1 text-sm text-muted">

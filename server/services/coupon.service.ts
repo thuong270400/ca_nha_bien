@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient } from '../generated/prisma/client'
+import type { Prisma } from '../generated/prisma/client'
 import { Errors } from '../utils/errors'
 import { prisma } from '../utils/prisma'
 import type { CouponCreateInput, CouponListQuery, CouponUpdateInput } from '../utils/schemas/coupon.schema'
@@ -78,7 +78,7 @@ export function computeDiscount(coupon: CouponForDiscount, subtotal: number): nu
   return Math.min(Number(coupon.value), subtotal)
 }
 
-type CouponClient = PrismaClient | Prisma.TransactionClient
+type CouponClient = typeof prisma | Prisma.TransactionClient
 
 /** Coupons currently within their active window and usage limit — active, in date range, not exhausted. */
 async function fetchRedeemableCoupons(extraWhere: Prisma.CouponWhereInput = {}) {

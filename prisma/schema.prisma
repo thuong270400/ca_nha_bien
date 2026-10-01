@@ -197,6 +197,11 @@ model Product {
   /// Order.estimatedAvailabilityDays lấy số lớn nhất trong giỏ.
   availabilityDays Int?
 
+  /// Giá nhập kho tại cảng (VND) — CHỈ admin thấy. Bị ẩn mặc định ở mọi query
+  /// nhờ global `omit` trong server/utils/prisma.ts; chỉ các query admin mới
+  /// bật lại bằng `omit: { importPrice: false }` (xem product.service).
+  importPrice Decimal? @db.Decimal(12, 2)
+
   categories      Category[]
   images          ProductImage[]
   variants        ProductVariant[]
