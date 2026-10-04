@@ -257,6 +257,37 @@ export async function updateOrderStatus(id: string, status: OrderStatus) {
   return prisma.order.update({ where: { id }, data: { status }, include: orderInclude })
 }
 
+/**
+ * Admin đặt thẳng trạng thái thanh toán (khác confirmBankTransferPayment chỉ
+ * đi tiếp đúng 1 bước) — dùng cho COD đã thu tiền, hoàn tiền, đánh dấu thất bại
+ * hoặc sửa nhầm. Giữ Order.paymentStatus và Payment.status đồng bộ trong cùng
+ * transaction; paidAt/depositPaidAt được set khi chuyển sang PAID/DEPOSIT_PAID
+ * và xoá khi lùi về PENDING.
+ */
+export async function updatePaymentStatus(id: string, status: PaymentStatus) {
+  const order = await prisma.order.findUnique({ where: { id }, include: { payment: true } })
+  if (!order || !order.payment) throw Errors.notFound('Không tìm thấy đơn hàng')
+  const payment = order.payment
+  if (status === 'DEPOSIT_PAID' && payment.depositAmount === null) {
+    throw Errors.badRequest('Đơn hàng này không có tiền cọc')
+  }
+
+  const now = new Date()
+  const timestamps: Prisma.PaymentUpdateInput
+    = status === 'PAID'
+      ? { paidAt: payment.paidAt ?? now, ...(payment.depositAmount !== null ? { depositPaidAt: payment.depositPaidAt ?? now } : {}) }
+      : status === 'DEPOSIT_PAID'
+        ? { depositPaidAt: payment.depositPaidAt ?? now, paidAt: null }
+        : status === 'PENDING'
+          ? { paidAt: null, depositPaidAt: null }
+          : {}
+
+  return prisma.$transaction(async (tx) => {
+    await tx.payment.update({ where: { id: payment.id }, data: { status, ...timestamps } })
+    return tx.order.update({ where: { id }, data: { paymentStatus: status }, include: orderInclude })
+  })
+}
+
 type SettleablePayment = { id: string, status: PaymentStatus, amount: Prisma.Decimal, depositAmount: Prisma.Decimal | null }
 
 /**

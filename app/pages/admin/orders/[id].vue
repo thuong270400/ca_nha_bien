@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { OrderStatus, OrderView } from '#shared/types/order'
+import type { OrderStatus, OrderView, PaymentStatus } from '#shared/types/order'
 import { formatDays, groupByAvailabilityDays } from '#shared/utils/sourcing'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
@@ -35,6 +35,35 @@ async function updateStatus(status: string) {
     toast.add({ title: 'Lỗi', description: message, color: 'error' })
   } finally {
     updating.value = false
+  }
+}
+
+// Chỉnh tay trạng thái thanh toán (COD đã thu tiền, hoàn tiền, sửa nhầm...).
+// DEPOSIT_PAID chỉ hiện khi đơn có tách cọc.
+const paymentStatusOptions = computed(() =>
+  (Object.keys(paymentStatusLabels) as PaymentStatus[])
+    .filter(value => value !== 'DEPOSIT_PAID' || Boolean(order.value?.payment?.depositAmount))
+    .map(value => ({ label: paymentStatusLabels[value], value })),
+)
+
+const updatingPayment = ref(false)
+async function updatePaymentStatus(paymentStatus: PaymentStatus) {
+  if (paymentStatus === order.value?.paymentStatus) return
+  const ok = await confirm({
+    title: `Đổi trạng thái thanh toán thành "${paymentStatusLabels[paymentStatus]}"?`,
+    description: 'Thay đổi thủ công sẽ ghi đè trạng thái hiện tại, kể cả trạng thái do webhook SePay tự cập nhật.',
+  })
+  if (!ok) return
+  updatingPayment.value = true
+  try {
+    await $fetch(`/api/orders/${id}/payment-status`, { method: 'PATCH', body: { paymentStatus } })
+    toast.add({ title: 'Đã cập nhật trạng thái thanh toán', color: 'success' })
+    await refresh()
+  } catch (err) {
+    const message = (err as { data?: { message?: string } })?.data?.message ?? 'Không thể cập nhật trạng thái thanh toán'
+    toast.add({ title: 'Lỗi', description: message, color: 'error' })
+  } finally {
+    updatingPayment.value = false
   }
 }
 
@@ -175,6 +204,15 @@ useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Bi
           <p class="text-sm text-muted">
             {{ paymentMethodLabels[order.paymentMethod] }}
           </p>
+          <UFormField label="Trạng thái thanh toán" class="mt-3">
+            <USelect
+              :model-value="order.paymentStatus"
+              :items="paymentStatusOptions"
+              :loading="updatingPayment"
+              class="w-full"
+              @update:model-value="updatePaymentStatus"
+            />
+          </UFormField>
           <UButton
             v-if="order.paymentMethod === 'BANK_TRANSFER' && (order.paymentStatus === 'PENDING' || order.paymentStatus === 'DEPOSIT_PAID')"
             class="mt-3"

@@ -27,5 +27,12 @@ export const orderStatusUpdateSchema = z.object({
   status: z.enum(['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPING', 'DELIVERED', 'CANCELLED']),
 })
 
+// Admin chỉnh tay trạng thái thanh toán (vd COD đã thu tiền, hoàn tiền, đánh
+// dấu thất bại) — xem order.service.ts#updatePaymentStatus.
+export const paymentStatusUpdateSchema = z.object({
+  paymentStatus: z.enum(['PENDING', 'DEPOSIT_PAID', 'PAID', 'FAILED', 'REFUNDED']),
+})
+
 export type CreateOrderInput = z.infer<typeof createOrderSchema>
 export type OrderStatusUpdateInput = z.infer<typeof orderStatusUpdateSchema>
+export type PaymentStatusUpdateInput = z.infer<typeof paymentStatusUpdateSchema>
