@@ -109,11 +109,13 @@ async function confirmPayment() {
 // QR chuyển khoản cho bước đang chờ — cùng cách tính với trang đơn của khách
 // (app/pages/order/[id].vue): cọc trước (PENDING) hoặc phần còn lại
 // (DEPOSIT_PAID), luôn dựng từ Payment.bankSnapshot chứ không từ Setting.
+// Điều kiện đọc từ order.paymentMethod/paymentStatus — cùng nguồn với badge
+// và nút xác nhận — để khung QR luôn khớp với trạng thái admin đang thấy.
 const qrAmount = computed(() => {
-  const payment = props.order.payment
-  if (!payment || payment.method !== 'BANK_TRANSFER') return null
-  if (payment.status === 'PENDING') return payment.depositAmount ? Number(payment.depositAmount) : Number(payment.amount)
-  if (payment.status === 'DEPOSIT_PAID') return remainingAmount.value
+  const { order } = props
+  if (order.paymentMethod !== 'BANK_TRANSFER') return null
+  if (order.paymentStatus === 'PENDING') return Number(order.payment?.depositAmount ?? order.total)
+  if (order.paymentStatus === 'DEPOSIT_PAID') return remainingAmount.value
   return null
 })
 const qrImageUrl = computed(() => {
