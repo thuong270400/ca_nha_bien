@@ -8,6 +8,7 @@ const links = [
   { label: 'Danh mục', icon: 'i-lucide-tags', to: '/admin/categories' },
   { label: 'Tag', icon: 'i-lucide-tag', to: '/admin/tags' },
   { label: 'Đơn hàng', icon: 'i-lucide-shopping-bag', to: '/admin/orders' },
+  { label: 'Hoá đơn', icon: 'i-lucide-receipt-text', to: '/admin/bills' },
   { label: 'Khách hàng', icon: 'i-lucide-users', to: '/admin/customers' },
   { label: 'Đánh giá', icon: 'i-lucide-star', to: '/admin/reviews' },
   { label: 'Mã giảm giá', icon: 'i-lucide-ticket-percent', to: '/admin/coupons' },

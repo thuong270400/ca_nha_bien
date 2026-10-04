@@ -50,6 +50,10 @@ const qrImageUrl = computed(() => {
   })
 })
 
+// Hoá đơn chỉ mở được khi đơn đã thanh toán đủ (vd. ngay sau khi webhook SePay
+// xác nhận chuyển khoản thành công).
+const billOpen = ref(false)
+
 useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Biển` })
 </script>
 
@@ -140,6 +144,15 @@ useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Bi
           <p class="text-sm text-muted">
             {{ paymentMethodLabels[order.paymentMethod] }}
           </p>
+          <UButton
+            v-if="order.paymentStatus === 'PAID'"
+            class="mt-3"
+            block
+            icon="i-lucide-receipt-text"
+            @click="billOpen = true"
+          >
+            Xem hoá đơn
+          </UButton>
 
           <div
             v-if="order.paymentMethod === 'BANK_TRANSFER' && (order.paymentStatus === 'PENDING' || order.paymentStatus === 'DEPOSIT_PAID')"
@@ -195,5 +208,7 @@ useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Bi
         </div>
       </div>
     </div>
+
+    <OrderBillModal v-model:open="billOpen" :order="order" />
   </UContainer>
 </template>

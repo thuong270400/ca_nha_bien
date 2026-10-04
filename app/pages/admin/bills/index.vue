@@ -4,8 +4,11 @@ import type { OrderStatus, OrderView } from '#shared/types/order'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
+// Quản lý hoá đơn: mỗi đơn hàng sinh ra một hoá đơn (phiếu) để in bỏ vào hàng,
+// gửi khách, đối soát — dữ liệu lấy thẳng từ Order, không có bảng riêng.
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
 
 const statusOptions: { label: string, value: OrderStatus | 'ALL' }[] = [
   { label: 'Tất cả', value: 'ALL' },
@@ -23,65 +26,43 @@ const query = computed(() => ({
   limit: 20,
 }))
 
-const { data, refresh: refreshList } = await useFetch<PaginatedResult<OrderView>>('/api/orders', {
-  key: 'admin-orders',
+const { data } = await useFetch<PaginatedResult<OrderView>>('/api/orders', {
+  key: 'admin-bills',
   query,
 })
 
-const toast = useToast()
+const billOpen = ref(false)
+const billOrder = ref<OrderView | null>(null)
+const loadingId = ref<string | null>(null)
 
-// Xem chi tiết đơn trong popup thay vì chuyển trang — trang /admin/orders/:id
-// vẫn giữ để mở trực tiếp bằng link (vd. từ dashboard).
-const detailOpen = ref(false)
-const detailOrder = ref<OrderView | null>(null)
-const loadingDetailId = ref<string | null>(null)
-
-async function loadDetail(id: string) {
-  detailOrder.value = await $fetch<OrderView>(`/api/orders/${id}`)
-}
-
-async function openDetail(id: string) {
-  loadingDetailId.value = id
+async function openBill(id: string) {
+  loadingId.value = id
   try {
-    await loadDetail(id)
-    detailOpen.value = true
+    billOrder.value = await $fetch<OrderView>(`/api/orders/${id}`)
+    billOpen.value = true
   } catch (err) {
-    const message = (err as { data?: { message?: string } })?.data?.message ?? 'Không thể tải đơn hàng'
+    const message = (err as { data?: { message?: string } })?.data?.message ?? 'Không thể tải hoá đơn'
     toast.add({ title: 'Lỗi', description: message, color: 'error' })
   } finally {
-    loadingDetailId.value = null
+    loadingId.value = null
   }
 }
-
-async function refreshDetail() {
-  if (!detailOrder.value) return
-  try {
-    await loadDetail(detailOrder.value.id)
-  } catch {
-    // Bỏ qua lỗi tạm thời khi tải lại (vd. lúc đang polling chờ thanh toán).
-  }
-}
-
-// Đóng popup thì tải lại danh sách để phản ánh trạng thái vừa đổi.
-watch(detailOpen, (open) => {
-  if (!open) refreshList()
-})
 
 function setStatus(status: string) {
-  router.push({ path: '/admin/orders', query: status === 'ALL' ? {} : { status } })
+  router.push({ path: '/admin/bills', query: status === 'ALL' ? {} : { status } })
 }
 
 function setPage(page: number) {
-  router.push({ path: '/admin/orders', query: { ...route.query, page } })
+  router.push({ path: '/admin/bills', query: { ...route.query, page } })
 }
 
-useSeoMeta({ title: 'Đơn hàng - Cá Nhà Biển Admin' })
+useSeoMeta({ title: 'Hoá đơn - Cá Nhà Biển Admin' })
 </script>
 
 <template>
   <div class="space-y-4 p-4 sm:p-6">
     <h1 class="text-xl font-bold text-highlighted">
-      Đơn hàng
+      Hoá đơn
     </h1>
 
     <USelect
@@ -102,10 +83,10 @@ useSeoMeta({ title: 'Đơn hàng - Cá Nhà Biển Admin' })
               Khách hàng
             </th>
             <th class="px-4 py-3">
-              Tổng tiền
+              SĐT
             </th>
             <th class="px-4 py-3">
-              Trạng thái
+              Tổng thanh toán
             </th>
             <th class="px-4 py-3">
               Thanh toán
@@ -125,42 +106,37 @@ useSeoMeta({ title: 'Đơn hàng - Cá Nhà Biển Admin' })
               {{ order.recipientName }}
             </td>
             <td class="px-4 py-3">
+              {{ order.recipientPhone }}
+            </td>
+            <td class="px-4 py-3">
               {{ formatVnd(order.total) }}
             </td>
             <td class="px-4 py-3">
-              <div class="flex flex-wrap items-center gap-1">
-                <UBadge :color="orderStatusColors[order.status]">
-                  {{ orderStatusLabels[order.status] }}
-                </UBadge>
-                <UBadge v-if="order.depositPercent" color="warning" variant="subtle">
-                  Cọc {{ order.depositPercent }}%
-                </UBadge>
-                <UBadge v-if="order.deliveryMode === 'SPLIT'" color="primary" variant="subtle">
-                  Giao nhiều lần
+              <div class="flex flex-col items-start gap-1">
+                <span class="text-xs text-muted">{{ order.paymentMethod === 'COD' ? 'COD' : 'Chuyển khoản' }}</span>
+                <UBadge :color="paymentStatusColors[order.paymentStatus]" variant="subtle">
+                  {{ paymentStatusLabels[order.paymentStatus] }}
                 </UBadge>
               </div>
             </td>
-            <td class="px-4 py-3">
-              <UBadge :color="paymentStatusColors[order.paymentStatus]" variant="subtle">
-                {{ paymentStatusLabels[order.paymentStatus] }}
-              </UBadge>
-            </td>
             <td class="px-4 py-3 text-muted">
-              {{ new Date(order.createdAt).toLocaleDateString('vi-VN') }}
+              {{ new Date(order.createdAt).toLocaleString('vi-VN') }}
             </td>
             <td class="px-4 py-3 text-right">
               <UButton
-                icon="i-lucide-eye"
+                icon="i-lucide-receipt-text"
                 size="sm"
-                variant="ghost"
-                :loading="loadingDetailId === order.id"
-                @click="openDetail(order.id)"
-              />
+                variant="soft"
+                :loading="loadingId === order.id"
+                @click="openBill(order.id)"
+              >
+                Xem
+              </UButton>
             </td>
           </tr>
           <tr v-if="!data?.data.length">
             <td colspan="7" class="px-4 py-10 text-center text-muted">
-              Không có đơn hàng nào
+              Không có hoá đơn nào
             </td>
           </tr>
         </tbody>
@@ -176,20 +152,6 @@ useSeoMeta({ title: 'Đơn hàng - Cá Nhà Biển Admin' })
       />
     </div>
 
-    <UModal
-      v-model:open="detailOpen"
-      :title="detailOrder ? `Đơn hàng ${detailOrder.orderNumber}` : 'Đơn hàng'"
-      :ui="{ content: 'sm:max-w-5xl' }"
-    >
-      <template #body>
-        <AdminOrderDetail
-          v-if="detailOrder"
-          :key="detailOrder.id"
-          :order="detailOrder"
-          hide-title
-          @refresh="refreshDetail"
-        />
-      </template>
-    </UModal>
+    <OrderBillModal v-model:open="billOpen" :order="billOrder" />
   </div>
 </template>
