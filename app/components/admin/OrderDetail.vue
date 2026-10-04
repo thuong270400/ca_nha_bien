@@ -109,11 +109,12 @@ async function confirmPayment() {
 // QR chuyển khoản cho bước đang chờ — cùng cách tính với trang đơn của khách
 // (app/pages/order/[id].vue): cọc trước (PENDING) hoặc phần còn lại
 // (DEPOSIT_PAID), luôn dựng từ Payment.bankSnapshot chứ không từ Setting.
-// Điều kiện đọc từ order.paymentMethod/paymentStatus — cùng nguồn với badge
-// và nút xác nhận — để khung QR luôn khớp với trạng thái admin đang thấy.
+// Điều kiện đọc từ order.paymentMethod/paymentStatus — cùng nguồn với badge —
+// để khung QR luôn khớp với trạng thái admin đang thấy. COD cũng có QR (khách
+// quét lúc nhận hàng thay vì trả tiền mặt), webhook SePay xác nhận được cả 2.
 const qrAmount = computed(() => {
   const { order } = props
-  if (order.paymentMethod !== 'BANK_TRANSFER') return null
+  if (order.paymentMethod !== 'BANK_TRANSFER' && order.paymentMethod !== 'COD') return null
   if (order.paymentStatus === 'PENDING') return Number(order.payment?.depositAmount ?? order.total)
   if (order.paymentStatus === 'DEPOSIT_PAID') return remainingAmount.value
   return null
@@ -248,7 +249,7 @@ onBeforeUnmount(() => clearInterval(pollTimer))
             </p>
           </template>
           <p v-else class="text-sm text-muted">
-            Không thể hiển thị mã QR (đơn thiếu thông tin ngân hàng).
+            Không thể hiển thị mã QR (đơn thiếu thông tin ngân hàng<template v-if="order.paymentMethod === 'COD'"> — đơn COD đặt trước khi có QR, hoặc lúc đặt chưa cấu hình tài khoản</template>).
           </p>
         </UCard>
 
@@ -276,7 +277,7 @@ onBeforeUnmount(() => clearInterval(pollTimer))
             />
           </UFormField>
           <UButton
-            v-if="order.paymentMethod === 'BANK_TRANSFER' && (order.paymentStatus === 'PENDING' || order.paymentStatus === 'DEPOSIT_PAID')"
+            v-if="qrAmount !== null"
             class="mt-3"
             size="sm"
             :loading="confirmingPayment"

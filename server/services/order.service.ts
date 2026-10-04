@@ -4,7 +4,7 @@ import type { SepayWebhookPayload } from '../utils/schemas/sepay.schema'
 import { validateCoupon } from './coupon.service'
 import { getBankSettings, getDepositSettings } from './setting.service'
 import { Prisma } from '../generated/prisma/client'
-import type { OrderStatus, PaymentStatus } from '../generated/prisma/enums'
+import type { OrderStatus, PaymentMethod, PaymentStatus } from '../generated/prisma/enums'
 import { Errors } from '../utils/errors'
 import { extractOrderNumber, generateOrderNumber } from '../utils/order-number'
 import { prisma } from '../utils/prisma'
@@ -150,6 +150,13 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
       if (depositPercent && depositPercent < 100) {
         depositAmount = Math.round(total * depositPercent / 100)
       }
+    } else if (input.paymentMethod === 'COD') {
+      // COD vẫn snapshot tài khoản (nếu đã cấu hình) để admin đưa QR cho khách
+      // quét lúc giao hàng thay vì trả tiền mặt — webhook SePay đối chiếu theo
+      // snapshot này giống BANK_TRANSFER. Chưa cấu hình thì vẫn cho đặt COD bình
+      // thường, chỉ là đơn đó không có QR.
+      const bank = await getBankSettings(tx)
+      if (bank.bankCode && bank.bankAccountNumber) bankSnapshot = bank
     }
 
     if (input.saveAddress && ctx.userId) {
@@ -345,6 +352,14 @@ async function settlePayment(
 }
 
 /**
+ * Phương thức có thể nhận tiền qua QR chuyển khoản: BANK_TRANSFER, và COD (khách
+ * quét QR lúc nhận hàng thay vì trả tiền mặt — xem bankSnapshot ở createOrder).
+ */
+function acceptsBankTransfer(method: PaymentMethod) {
+  return method === 'BANK_TRANSFER' || method === 'COD'
+}
+
+/**
  * Admin xác nhận thủ công đã nhận chuyển khoản — fallback khi webhook SePay
  * (confirmBankTransferPaymentFromSepay) không tự khớp được giao dịch (vd nội
  * dung chuyển khoản bị khách xoá/sửa, sai số tiền). Tự nhận diện đang ở bước
@@ -353,7 +368,7 @@ async function settlePayment(
 export async function confirmBankTransferPayment(id: string) {
   const order = await prisma.order.findUnique({ where: { id }, include: { payment: true } })
   if (!order || !order.payment) throw Errors.notFound('Không tìm thấy đơn hàng')
-  if (order.payment.method !== 'BANK_TRANSFER') throw Errors.badRequest('Đơn hàng này không sử dụng thanh toán chuyển khoản')
+  if (!acceptsBankTransfer(order.payment.method)) throw Errors.badRequest('Đơn hàng này không sử dụng thanh toán chuyển khoản')
 
   const step = resolveNextPaymentStep(order.payment)
   if (!step) throw Errors.badRequest('Đơn hàng đã được xử lý thanh toán')
@@ -385,7 +400,7 @@ export async function confirmBankTransferPaymentFromSepay(payload: SepayWebhookP
 
   const order = await prisma.order.findUnique({ where: { orderNumber }, include: { payment: true } })
   if (!order || !order.payment) return { matched: false, reason: 'order-not-found' }
-  if (order.paymentMethod !== 'BANK_TRANSFER') return { matched: false, reason: 'not-bank-transfer' }
+  if (!acceptsBankTransfer(order.paymentMethod)) return { matched: false, reason: 'not-bank-transfer' }
 
   const snapshot = order.payment.bankSnapshot as { bankAccountNumber?: string | null } | null
   if (!snapshot?.bankAccountNumber || snapshot.bankAccountNumber !== payload.accountNumber) {
