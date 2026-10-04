@@ -19,10 +19,15 @@ export const BILL_CSS = `
 .bill-info { display: grid; grid-template-columns: 110px 1fr; gap: 3px 8px; }
 .bill-info span:nth-child(odd) { color: #555; }
 .bill table { width: 100%; border-collapse: collapse; }
-.bill th, .bill td { border: 1px solid #ccd6dd; padding: 6px 8px; text-align: left; vertical-align: top; }
+.bill th, .bill td { border: 1px solid #ccd6dd; padding: 6px 8px; text-align: center; vertical-align: middle; }
 .bill th { background: #eef5fa; font-size: 12px; }
-.bill .num { text-align: right; white-space: nowrap; }
-.bill-summary { margin-left: auto; width: 100%; max-width: 330px; margin-top: 10px; }
+.bill .num { white-space: nowrap; }
+.bill-bottom { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-top: 10px; }
+.bill-qr { text-align: center; font-size: 11px; color: #444; max-width: 200px; }
+.bill-qr img { width: 140px; height: 140px; display: block; margin: 0 auto 4px; border: 1px solid #ccd6dd; border-radius: 4px; }
+.bill-qr p { margin: 1px 0; }
+.bill-qr strong { color: #0b4f7a; }
+.bill-summary { margin-left: auto; width: 100%; max-width: 330px; }
 .bill-summary div { display: flex; justify-content: space-between; padding: 3px 0; }
 .bill-summary .total { border-top: 1px solid #111; margin-top: 4px; padding-top: 6px; font-size: 15px; font-weight: 700; }
 .bill-summary .due { font-weight: 700; color: #b42318; }
@@ -38,6 +43,12 @@ export interface BillPaymentSummary {
   remaining: number
   /** Nhãn cho phần còn lại: COD thì shipper thu hộ, chuyển khoản thì khách còn nợ. */
   remainingLabel: string
+  /**
+   * Số tiền cho QR của bước đang chờ — cọc trước (PENDING) hoặc phần còn lại
+   * (DEPOSIT_PAID), cùng cách tính với admin OrderDetail/trang đơn của khách vì
+   * webhook SePay so khớp đúng số tiền này. `null` khi không còn gì để quét.
+   */
+  qrAmount: number | null
 }
 
 export function billPaymentSummary(order: OrderView): BillPaymentSummary {
@@ -46,10 +57,16 @@ export function billPaymentSummary(order: OrderView): BillPaymentSummary {
   if (order.paymentStatus === 'PAID') paid = total
   else if (order.paymentStatus === 'DEPOSIT_PAID') paid = Number(order.payment?.depositAmount ?? 0)
   const remaining = Math.max(total - paid, 0)
+  let qrAmount: number | null = null
+  if (order.paymentMethod === 'BANK_TRANSFER' || order.paymentMethod === 'COD') {
+    if (order.paymentStatus === 'PENDING') qrAmount = Number(order.payment?.depositAmount ?? total)
+    else if (order.paymentStatus === 'DEPOSIT_PAID') qrAmount = remaining
+  }
   return {
     paid,
     remaining,
     remainingLabel: order.paymentMethod === 'COD' ? 'Thu hộ (COD)' : 'Còn phải thanh toán',
+    qrAmount: qrAmount && qrAmount > 0 ? qrAmount : null,
   }
 }
 

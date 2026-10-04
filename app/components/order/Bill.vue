@@ -4,7 +4,7 @@ import type { OrderView } from '#shared/types/order'
 // Hoá đơn (phiếu) của đơn hàng — dùng chung cho admin (/admin/bills) và trang
 // đơn của khách. Style nằm trong BILL_CSS (app/utils/bill.ts) và được render
 // ngay trong root để printBill() copy nguyên outerHTML sang iframe in.
-const props = defineProps<{ order: OrderView }>()
+const props = withDefaults(defineProps<{ order: OrderView, showQr?: boolean }>(), { showQr: true })
 
 const root = ref<HTMLElement | null>(null)
 defineExpose({ root })
@@ -18,6 +18,23 @@ const address = computed(() =>
   [props.order.addressLine, props.order.ward, props.order.district, props.order.province].filter(Boolean).join(', '),
 )
 const fmt = (value: string | number) => formatVnd(value)
+
+// QR chuyển khoản, luôn dựng từ Payment.bankSnapshot (không từ Setting): số tiền
+// của bước đang chờ, hoặc tổng đơn nếu đã thanh toán xong (chỉ hiện khi bật tay).
+const bank = computed(() => props.order.payment?.bankSnapshot ?? null)
+const qrAmount = computed(() => {
+  const { paymentMethod } = props.order
+  if (paymentMethod !== 'BANK_TRANSFER' && paymentMethod !== 'COD') return null
+  return payment.value.qrAmount ?? Number(props.order.total)
+})
+const qrImageUrl = computed(() => {
+  if (!props.showQr || !bank.value || qrAmount.value === null) return null
+  return buildVietQrImageUrl(bank.value, {
+    amount: qrAmount.value,
+    addInfo: props.order.orderNumber,
+    template: 'qr_only',
+  })
+})
 </script>
 
 <template>
@@ -72,8 +89,9 @@ const fmt = (value: string | number) => formatVnd(value)
             </th>
             <th>Sản phẩm</th>
             <th class="num">
-              SL
+              Số lượng
             </th>
+            <th>Đơn vị</th>
             <th class="num">
               Đơn giá
             </th>
@@ -87,8 +105,9 @@ const fmt = (value: string | number) => formatVnd(value)
             <td>{{ idx + 1 }}</td>
             <td>{{ item.productName }}</td>
             <td class="num">
-              {{ item.quantity }} {{ item.unit }}
+              {{ item.quantity }}
             </td>
+            <td>{{ item.unit }}</td>
             <td class="num">
               {{ fmt(item.price) }}
             </td>
@@ -99,24 +118,33 @@ const fmt = (value: string | number) => formatVnd(value)
         </tbody>
       </table>
 
-      <div class="bill-summary">
-        <div><span>Tiền hàng</span><span>{{ fmt(order.subtotal) }}</span></div>
-        <div>
-          <span>Phí vận chuyển</span>
-          <span>{{ Number(order.shippingFee) === 0 ? 'Miễn phí' : fmt(order.shippingFee) }}</span>
+      <div class="bill-bottom">
+        <div v-if="qrImageUrl && bank" class="bill-qr">
+          <img :src="qrImageUrl" alt="QR chuyển khoản">
+          <p><strong>Quét QR để thanh toán {{ fmt(qrAmount ?? 0) }}</strong></p>
+          <p>{{ bank.bankName }}</p>
+          <p>{{ bank.bankAccountNumber }} · {{ bank.bankAccountName }}</p>
+          <p>Nội dung: {{ order.orderNumber }}</p>
         </div>
-        <div>
-          <span>Giảm giá<template v-if="order.coupons.length"> ({{ order.coupons.map(c => c.couponCode).join(', ') }})</template></span>
-          <span>{{ Number(order.discountAmount) > 0 ? `-${fmt(order.discountAmount)}` : fmt(0) }}</span>
-        </div>
-        <div class="total">
-          <span>Tổng thanh toán</span><span>{{ fmt(order.total) }}</span>
-        </div>
-        <div class="paid">
-          <span>Đã thanh toán</span><span>{{ fmt(payment.paid) }}</span>
-        </div>
-        <div :class="{ due: payment.remaining > 0 }">
-          <span>{{ payment.remainingLabel }}</span><span>{{ fmt(payment.remaining) }}</span>
+        <div class="bill-summary">
+          <div><span>Tiền hàng</span><span>{{ fmt(order.subtotal) }}</span></div>
+          <div>
+            <span>Phí vận chuyển</span>
+            <span>{{ Number(order.shippingFee) === 0 ? 'Miễn phí' : fmt(order.shippingFee) }}</span>
+          </div>
+          <div>
+            <span>Giảm giá<template v-if="order.coupons.length"> ({{ order.coupons.map(c => c.couponCode).join(', ') }})</template></span>
+            <span>{{ Number(order.discountAmount) > 0 ? `-${fmt(order.discountAmount)}` : fmt(0) }}</span>
+          </div>
+          <div class="total">
+            <span>Tổng thanh toán</span><span>{{ fmt(order.total) }}</span>
+          </div>
+          <div class="paid">
+            <span>Đã thanh toán</span><span>{{ fmt(payment.paid) }}</span>
+          </div>
+          <div :class="{ due: payment.remaining > 0 }">
+            <span>{{ payment.remainingLabel }}</span><span>{{ fmt(payment.remaining) }}</span>
+          </div>
         </div>
       </div>
     </div>
