@@ -13,6 +13,8 @@ if (!orderId) {
   await navigateTo('/')
 }
 
+const billOpen = ref(false)
+
 useSeoMeta({ title: 'Đặt hàng thành công - Cá Nhà Biển' })
 </script>
 
@@ -33,7 +35,10 @@ useSeoMeta({ title: 'Đặt hàng thành công - Cá Nhà Biển' })
       Đơn hàng cần đặt cọc trước {{ order.depositPercent }}%, chúng tôi sẽ liên hệ để xác nhận cọc.
     </p>
 
-    <div class="mt-6 flex gap-3">
+    <div class="mt-6 flex flex-wrap justify-center gap-3">
+      <UButton v-if="order" icon="i-lucide-receipt-text" variant="outline" @click="billOpen = true">
+        Xem hoá đơn
+      </UButton>
       <UButton v-if="order" :to="`/order/${order.id}`" variant="outline">
         Xem chi tiết đơn hàng
       </UButton>
@@ -41,5 +46,7 @@ useSeoMeta({ title: 'Đặt hàng thành công - Cá Nhà Biển' })
         Tiếp tục mua sắm
       </UButton>
     </div>
+
+    <OrderBillModal v-model:open="billOpen" :order="order ?? null" />
   </UContainer>
 </template>
