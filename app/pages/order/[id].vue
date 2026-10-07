@@ -92,7 +92,7 @@ useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Bi
               </p>
               <div class="space-y-2">
                 <div v-for="item in group.items" :key="item.id" class="flex justify-between text-sm">
-                  <span class="text-muted">{{ item.productName }} ({{ item.unit }}) × {{ item.quantity }}</span>
+                  <span class="text-muted">{{ item.productName }} ({{ item.unit }}) × {{ item.quantity }}<span v-if="item.comboItems?.length" class="block text-xs text-muted">Gồm: {{ formatComboContents(item.comboItems) }}</span></span>
                   <span class="font-medium">{{ formatVnd(item.lineTotal) }}</span>
                 </div>
               </div>
@@ -100,7 +100,7 @@ useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Bi
           </template>
           <div v-else class="space-y-3">
             <div v-for="item in order.items" :key="item.id" class="flex justify-between text-sm">
-              <span class="text-muted">{{ item.productName }} ({{ item.unit }}) × {{ item.quantity }}</span>
+              <span class="text-muted">{{ item.productName }} ({{ item.unit }}) × {{ item.quantity }}<span v-if="item.comboItems?.length" class="block text-xs text-muted">Gồm: {{ formatComboContents(item.comboItems) }}</span></span>
               <span class="font-medium">{{ formatVnd(item.lineTotal) }}</span>
             </div>
           </div>

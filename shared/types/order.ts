@@ -25,6 +25,14 @@ export interface OrderItemView {
   quantity: number
   lineTotal: string
   availabilityDays: number | null
+  /** Snapshot thành phần của 1 combo lúc đặt hàng — null nếu item không phải combo. */
+  comboItems: OrderComboItemSnapshot[] | null
+}
+
+export interface OrderComboItemSnapshot {
+  productName: string
+  unit: string
+  quantity: number
 }
 
 export interface PaymentView {

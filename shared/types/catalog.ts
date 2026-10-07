@@ -59,6 +59,29 @@ export interface Tag {
   showOnImage: boolean
 }
 
+/** Một thành phần của combo — `quantity` x đơn vị (biến thể) của một sản phẩm thường. */
+export interface ComboItem {
+  id: string
+  comboId: string
+  variantId: string
+  quantity: number
+  position: number
+  variant: {
+    id: string
+    unit: string
+    price: string
+    stock: number
+    product: {
+      id: string
+      name: string
+      slug: string
+      status: ProductStatus
+      deletedAt: string | null
+      images: { url: string }[]
+    }
+  }
+}
+
 export interface Product {
   id: string
   name: string
@@ -80,6 +103,10 @@ export interface Product {
   tags: Tag[]
   suggestedDishes: SuggestedDish[]
   availabilityDays: number | null
+  /** true = combo/ưu đãi: 1 biến thể "combo", giá = tổng giá thành phần (compareAtPrice) - comboDiscount. */
+  isCombo: boolean
+  comboDiscount: string | null
+  comboItems: ComboItem[]
   /** Giá nhập kho tại cảng — chỉ có trong response cho admin. */
   importPrice?: string | null
 }

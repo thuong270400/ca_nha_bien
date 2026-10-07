@@ -1,6 +1,7 @@
 import type { CreateOrderInput } from '#shared/schemas/order.schema'
 import { resolveAvailabilityDays } from '#shared/utils/sourcing'
 import type { SepayWebhookPayload } from '../utils/schemas/sepay.schema'
+import { refreshCombos } from './combo-sync.service'
 import { validateCoupon } from './coupon.service'
 import { getBankSettings, getDepositSettings } from './setting.service'
 import { Prisma } from '../generated/prisma/client'
@@ -48,7 +49,14 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
   return prisma.$transaction(async (tx) => {
     const cart = await tx.cart.findUnique({
       where: { id: ctx.cartId },
-      include: { items: { include: { variant: true, product: true } } },
+      include: {
+        items: {
+          include: {
+            variant: true,
+            product: { include: { comboItems: { orderBy: { position: 'asc' }, include: { variant: { include: { product: true } } } } } },
+          },
+        },
+      },
     })
     if (!cart || cart.items.length === 0) throw Errors.badRequest('Giỏ hàng đang trống')
 
@@ -66,6 +74,10 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
       if (item.product.deletedAt || item.product.status !== 'ACTIVE') {
         throw Errors.badRequest(`Sản phẩm "${item.product.name}" hiện không kinh doanh, vui lòng xoá khỏi giỏ hàng`)
       }
+      const inactiveComponent = item.product.comboItems.find(c => c.variant.product.deletedAt || c.variant.product.status !== 'ACTIVE')
+      if (inactiveComponent) {
+        throw Errors.badRequest(`Combo "${item.product.name}" có sản phẩm "${inactiveComponent.variant.product.name}" hiện không kinh doanh, vui lòng xoá khỏi giỏ hàng`)
+      }
       const lineTotal = Number(item.variant.price) * item.quantity
       subtotal += lineTotal
       const availabilityDays = resolveAvailabilityDays(item.product.availabilityDays)
@@ -78,6 +90,9 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
         quantity: item.quantity,
         lineTotal: lineTotal.toFixed(2),
         availabilityDays,
+        comboItems: item.product.isCombo
+          ? item.product.comboItems.map(c => ({ productName: c.variant.product.name, unit: c.variant.unit, quantity: c.quantity }))
+          : undefined,
       })
 
       if (availabilityDays > 0 && (estimatedAvailabilityDays === null || availabilityDays > estimatedAvailabilityDays)) {
@@ -91,19 +106,32 @@ async function attemptCreateOrder(input: CreateOrderInput, ctx: { userId: string
     const { depositPercent: globalDepositPercent } = await getDepositSettings(tx)
     const depositPercent = globalDepositPercent > 0 ? globalDepositPercent : null
 
-    for (const item of cart.items) {
+    // Combo không có kho riêng: trừ thẳng kho từng thành phần (cùng guard
+    // `stock: {gte}`), tồn kho của chính combo được tính lại ở refreshCombos bên
+    // dưới — cũng như mọi combo khác dùng chung thành phần với giỏ hàng này.
+    const touchedVariantIds = new Set<string>()
+    async function decrementStock(variantId: string, productId: string, quantity: number, label: string) {
       const result = await tx.productVariant.updateMany({
-        where: { id: item.variantId, stock: { gte: item.quantity } },
-        data: { stock: { decrement: item.quantity } },
+        where: { id: variantId, stock: { gte: quantity } },
+        data: { stock: { decrement: quantity } },
       })
       if (result.count === 0) {
-        throw Errors.badRequest(`Sản phẩm "${item.product.name}" không đủ tồn kho`)
+        throw Errors.badRequest(`${label} không đủ tồn kho`)
       }
-      await tx.product.update({
-        where: { id: item.productId },
-        data: { soldCount: { increment: item.quantity }, stock: { decrement: item.quantity } },
-      })
+      await tx.product.update({ where: { id: productId }, data: { stock: { decrement: quantity } } })
+      touchedVariantIds.add(variantId)
     }
+    for (const item of cart.items) {
+      if (item.product.isCombo) {
+        for (const component of item.product.comboItems) {
+          await decrementStock(component.variantId, component.variant.productId, component.quantity * item.quantity, `Sản phẩm "${component.variant.product.name}" trong combo "${item.product.name}"`)
+        }
+      } else {
+        await decrementStock(item.variantId, item.productId, item.quantity, `Sản phẩm "${item.product.name}"`)
+      }
+      await tx.product.update({ where: { id: item.productId }, data: { soldCount: { increment: item.quantity } } })
+    }
+    await refreshCombos(tx, { variantIds: [...touchedVariantIds] })
 
     // At most 1 coupon per CouponCategory — a customer can stack coupons from
     // different categories (e.g. one "free shipping" + one "product discount")

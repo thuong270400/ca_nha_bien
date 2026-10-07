@@ -161,7 +161,27 @@ async function addToCart() {
         <UIcon name="i-lucide-clock" class="size-4" />
         <span>Dự kiến có hàng: {{ formatDays(product.availabilityDays) }}</span>
       </p>
-      <div class="mt-6">
+      <div v-if="product.isCombo" class="mt-6 rounded-lg border border-default p-4">
+        <p class="mb-3 flex items-center gap-1.5 text-sm font-medium text-highlighted">
+          <UIcon name="i-lucide-package" class="size-4 text-primary" />
+          Combo gồm
+        </p>
+        <ul class="space-y-2">
+          <li v-for="item in product.comboItems" :key="item.id" class="flex items-center gap-3 text-sm">
+            <img
+              :src="item.variant.product.images[0]?.url ?? '/images/placeholder-fish.svg'"
+              :alt="item.variant.product.name"
+              class="size-10 shrink-0 rounded object-cover"
+            >
+            <NuxtLink :to="`/products/${item.variant.product.slug}`" class="flex-1 text-highlighted hover:text-primary">
+              {{ item.variant.product.name }}
+              <span class="text-muted">({{ item.variant.unit }})</span>
+            </NuxtLink>
+            <span class="shrink-0 font-medium text-muted">× {{ item.quantity }}</span>
+          </li>
+        </ul>
+      </div>
+      <div v-else class="mt-6">
         <p class="mb-2 text-sm font-medium text-highlighted">
           Đơn vị bán
         </p>

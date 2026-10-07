@@ -3,6 +3,7 @@ import { Prisma } from '../generated/prisma/client'
 import { Errors } from '../utils/errors'
 import { prisma } from '../utils/prisma'
 import type { ProductCreateInput, ProductListQuery, ProductUpdateInput } from '../utils/schemas/product.schema'
+import { assertVariantsNotInCombo, refreshCombos } from './combo-sync.service'
 import { deleteImage } from './upload.service'
 
 /** Maps a `productSortSchema` value (also `Category.defaultSort`) to a Prisma orderBy. */
@@ -25,6 +26,22 @@ export const productInclude = {
   variants: { orderBy: { price: 'asc' as const } },
   tags: true,
   suggestedDishes: { orderBy: { position: 'asc' as const } },
+  comboItems: {
+    orderBy: { position: 'asc' as const },
+    include: {
+      variant: {
+        select: {
+          id: true,
+          unit: true,
+          price: true,
+          stock: true,
+          product: {
+            select: { id: true, name: true, slug: true, status: true, deletedAt: true, images: { take: 1, orderBy: { position: 'asc' as const }, select: { url: true } } },
+          },
+        },
+      },
+    },
+  },
 } satisfies Prisma.ProductInclude
 
 type IncomingVariant = ProductCreateInput['variants'][number]
@@ -35,7 +52,7 @@ function pickDefaultVariant<T extends { price: number | Prisma.Decimal, isDefaul
   return [...variants].sort((a, b) => Number(a.price) - Number(b.price))[0]!
 }
 
-async function assertSlugAvailable(slug: string, excludeId?: string) {
+export async function assertSlugAvailable(slug: string, excludeId?: string) {
   const existing = await prisma.product.findUnique({ where: { slug } })
   if (existing && existing.id !== excludeId) {
     throw Errors.conflict('Slug sản phẩm đã tồn tại')
@@ -46,6 +63,8 @@ export async function listProducts(query: ProductListQuery, opts: { includeInact
   const where: Prisma.ProductWhereInput = {
     deletedAt: opts.includeInactive ? undefined : null,
     status: opts.includeInactive ? query.status : 'ACTIVE',
+    // Combo chỉ hiện ở mục "Combo / Ưu đãi" (và /admin/combos), không lẫn vào danh sách sản phẩm thường.
+    isCombo: query.combo ?? false,
   }
 
   if (query.q) {
@@ -151,7 +170,7 @@ export async function getFeaturedProducts(limit = 8) {
 
 export async function getDistinctUnits(categorySlug?: string) {
   const rows = await prisma.productVariant.findMany({
-    where: { product: { ...activeProductWhere, ...(categorySlug ? { categories: { some: { slug: categorySlug } } } : {}) } },
+    where: { product: { ...activeProductWhere, isCombo: false, ...(categorySlug ? { categories: { some: { slug: categorySlug } } } : {}) } },
     distinct: ['unit'],
     select: { unit: true },
     orderBy: { unit: 'asc' },
@@ -233,7 +252,10 @@ export async function createProduct(input: ProductCreateInput) {
 }
 
 export async function updateProduct(id: string, input: ProductUpdateInput) {
-  await getProductById(id, { includeInactive: true })
+  const existing = await getProductById(id, { includeInactive: true })
+  if (existing.isCombo && input.variants) {
+    throw Errors.badRequest('Combo không có biến thể tự nhập — hãy sửa ở mục Combo / Ưu đãi')
+  }
   if (input.slug) await assertSlugAvailable(input.slug, id)
 
   const { product, removedImageUrls } = await prisma.$transaction(async (tx) => {
@@ -269,11 +291,15 @@ export async function updateProduct(id: string, input: ProductUpdateInput) {
         stock: variants.reduce((sum, v) => sum + v.stock, 0),
         tags: input.tagIds ? { set: input.tagIds.map(tagId => ({ id: tagId })) } : undefined,
       },
-      include: productInclude,
       omit: adminProductOmit,
     })
 
-    return { product, removedImageUrls }
+    // Giá/tồn kho/trạng thái của sản phẩm này có thể đã đổi — tính lại các combo
+    // chứa nó (hoặc chính nó nếu là combo, vd vừa khôi phục từ thùng rác).
+    await refreshCombos(tx, existing.isCombo ? { comboIds: [id] } : { variantIds: variants.map(v => v.id) })
+    const refreshed = await tx.product.findUniqueOrThrow({ where: { id: product.id }, include: productInclude, omit: adminProductOmit })
+
+    return { product: refreshed, removedImageUrls }
   })
 
   await Promise.all(removedImageUrls.map(url => deleteImage(url)))
@@ -281,8 +307,12 @@ export async function updateProduct(id: string, input: ProductUpdateInput) {
 }
 
 export async function deleteProduct(id: string) {
-  await getProductById(id, { includeInactive: true })
-  await prisma.product.update({ where: { id }, data: { deletedAt: new Date(), status: 'INACTIVE' } })
+  const product = await getProductById(id, { includeInactive: true })
+  await prisma.$transaction(async (tx) => {
+    await tx.product.update({ where: { id }, data: { deletedAt: new Date(), status: 'INACTIVE' } })
+    // Combo chứa sản phẩm vừa ẩn sẽ về tồn kho 0 (hết hàng) cho tới khi khôi phục.
+    await refreshCombos(tx, { variantIds: product.variants.map(v => v.id) })
+  })
 }
 
 export async function hardDeleteProduct(id: string) {
@@ -306,6 +336,7 @@ export async function hardDeleteProduct(id: string) {
   if (blockingOrderItem) {
     throw Errors.conflict('Không thể xoá vĩnh viễn sản phẩm còn nằm trong đơn hàng đang chờ xác nhận')
   }
+  if (!product.isCombo) await assertVariantsNotInCombo(prisma, product.variants.map(v => v.id))
 
   try {
     await prisma.product.delete({ where: { id } })
@@ -326,6 +357,7 @@ async function syncVariants(tx: Prisma.TransactionClient, productId: string, var
   const current = await tx.productVariant.findMany({ where: { productId }, select: { id: true } })
   const incomingIds = new Set(variants.filter(v => v.id).map(v => v.id))
   const toDelete = current.filter(v => !incomingIds.has(v.id))
+  await assertVariantsNotInCombo(tx, toDelete.map(v => v.id))
 
   for (const variant of toDelete) {
     try {
@@ -354,7 +386,7 @@ async function syncVariants(tx: Prisma.TransactionClient, productId: string, var
   }
 }
 
-async function syncImages(tx: Prisma.TransactionClient, productId: string, images: NonNullable<ProductUpdateInput['images']>) {
+export async function syncImages(tx: Prisma.TransactionClient, productId: string, images: NonNullable<ProductUpdateInput['images']>) {
   const keepIds = images.filter(i => i.id).map(i => i.id as string)
   const removed = await tx.productImage.findMany({ where: { productId, id: { notIn: keepIds } }, select: { url: true } })
   await tx.productImage.deleteMany({ where: { productId, id: { notIn: keepIds } } })

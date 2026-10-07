@@ -8,13 +8,17 @@ const emit = defineEmits<{ updated: [product: Product] }>()
 const { data: categories } = await useFetch<Category[]>('/api/categories', { key: 'admin-categories' })
 const { data: tags } = await useFetch<Tag[]>('/api/tags', { key: 'admin-tags-form' })
 
+const title = computed(() => product.isCombo ? 'Chỉnh sửa combo' : 'Chỉnh sửa sản phẩm')
+
 const toast = useToast()
 const loading = ref(false)
 
 async function onSubmit(payload: Record<string, unknown>) {
   loading.value = true
   try {
-    const updated = await $fetch<Product>(`/api/products/${product.id}`, { method: 'PATCH', body: payload })
+    // Combo có form/endpoint riêng (giá, tồn kho tự tính từ thành phần) — xem combo.service.ts.
+    const endpoint = product.isCombo ? `/api/combos/${product.id}` : `/api/products/${product.id}`
+    const updated = await $fetch<Product>(endpoint, { method: 'PATCH', body: payload })
     toast.add({ title: 'Đã lưu thay đổi', color: 'success' })
     emit('updated', updated)
     open.value = false
@@ -28,17 +32,27 @@ async function onSubmit(payload: Record<string, unknown>) {
 </script>
 
 <template>
-  <UModal v-model:open="open" title="Chỉnh sửa sản phẩm" :ui="{ content: 'max-w-3xl' }">
+  <UModal v-model:open="open" :title="title" :ui="{ content: 'max-w-4xl' }">
     <template #body>
-      <AdminProductForm
-        v-if="open"
-        :categories="categories ?? []"
-        :tags="tags ?? []"
-        :initial="product"
-        :loading="loading"
-        @submit="onSubmit"
-        @cancel="open = false"
-      />
+      <template v-if="open">
+        <AdminComboForm
+          v-if="product.isCombo"
+          :categories="categories ?? []"
+          :initial="product"
+          :loading="loading"
+          @submit="onSubmit"
+          @cancel="open = false"
+        />
+        <AdminProductForm
+          v-else
+          :categories="categories ?? []"
+          :tags="tags ?? []"
+          :initial="product"
+          :loading="loading"
+          @submit="onSubmit"
+          @cancel="open = false"
+        />
+      </template>
     </template>
   </UModal>
 </template>

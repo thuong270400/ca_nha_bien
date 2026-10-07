@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CategoryHomeSection } from '#shared/types/catalog'
+import type { CategoryHomeSection, Product } from '#shared/types/catalog'
 import type { Banner } from '#shared/types/content'
 import type { CouponPromoView } from '#shared/types/coupon'
 
@@ -7,6 +7,7 @@ interface HomeData {
   categorySections: CategoryHomeSection[]
   banners: Banner[]
   promotedCoupons: CouponPromoView[]
+  combos: Product[]
 }
 
 const { data } = await useFetch<HomeData>('/api/home', { key: 'home-data' })
@@ -111,6 +112,12 @@ useCanonical('/')
     </section>
 
     <StorefrontCouponTicketRow :coupons="data?.promotedCoupons ?? []" />
+
+    <StorefrontProductSection
+      title="Combo / Ưu đãi"
+      description="Gộp sẵn nhiều món, giá tốt hơn mua lẻ"
+      :products="data?.combos ?? []"
+    />
 
     <StorefrontProductSection
       v-for="section in data?.categorySections ?? []"

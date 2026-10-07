@@ -103,7 +103,12 @@ const qrImageUrl = computed(() => {
         <tbody>
           <tr v-for="(item, idx) in order.items" :key="item.id">
             <td>{{ idx + 1 }}</td>
-            <td>{{ item.productName }}</td>
+            <td>
+              {{ item.productName }}
+              <div v-if="item.comboItems?.length" class="combo-items">
+                Gồm: {{ formatComboContents(item.comboItems) }}
+              </div>
+            </td>
             <td class="num">
               {{ item.quantity }}
             </td>

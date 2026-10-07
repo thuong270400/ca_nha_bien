@@ -180,7 +180,7 @@ onBeforeUnmount(() => clearInterval(pollTimer))
               </p>
               <div class="space-y-1.5">
                 <div v-for="item in group.items" :key="item.id" class="flex justify-between text-sm">
-                  <span>{{ item.productName }} ({{ item.unit }}) × {{ item.quantity }}</span>
+                  <span>{{ item.productName }} ({{ item.unit }}) × {{ item.quantity }}<span v-if="item.comboItems?.length" class="block text-xs text-muted">Gồm: {{ formatComboContents(item.comboItems) }}</span></span>
                   <span class="font-medium">{{ formatVnd(item.lineTotal) }}</span>
                 </div>
               </div>
@@ -188,7 +188,7 @@ onBeforeUnmount(() => clearInterval(pollTimer))
           </template>
           <div v-else class="space-y-2">
             <div v-for="item in order.items" :key="item.id" class="flex justify-between text-sm">
-              <span>{{ item.productName }} ({{ item.unit }}) × {{ item.quantity }}</span>
+              <span>{{ item.productName }} ({{ item.unit }}) × {{ item.quantity }}<span v-if="item.comboItems?.length" class="block text-xs text-muted">Gồm: {{ formatComboContents(item.comboItems) }}</span></span>
               <span class="font-medium">{{ formatVnd(item.lineTotal) }}</span>
             </div>
           </div>

@@ -22,6 +22,7 @@ export const BILL_CSS = `
 .bill th, .bill td { border: 1px solid #ccd6dd; padding: 6px 8px; text-align: center; vertical-align: middle; }
 .bill th { background: #eef5fa; font-size: 12px; }
 .bill .num { white-space: nowrap; }
+.bill .combo-items { font-size: 11px; color: #555; }
 .bill-bottom { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-top: 10px; }
 .bill-qr { text-align: center; font-size: 11px; color: #444; max-width: 200px; }
 .bill-qr img { width: 140px; height: 140px; display: block; margin: 0 auto 4px; border: 1px solid #ccd6dd; border-radius: 4px; }

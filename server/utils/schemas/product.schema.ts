@@ -68,6 +68,8 @@ export const productListQuerySchema = paginationSchema.extend({
   inStock: boolQuery.optional(),
   status: productStatusSchema.optional(),
   featured: boolQuery.optional(),
+  /** true = chỉ lấy combo, mặc định (không truyền) = chỉ sản phẩm thường. */
+  combo: boolQuery.optional(),
   sort: productSortSchema.default('newest'),
 })
 

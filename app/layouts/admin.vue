@@ -5,6 +5,7 @@ const router = useRouter()
 const links = [
   { label: 'Tổng quan', icon: 'i-lucide-layout-dashboard', to: '/admin' },
   { label: 'Sản phẩm', icon: 'i-lucide-fish', to: '/admin/products' },
+  { label: 'Combo / Ưu đãi', icon: 'i-lucide-package', to: '/admin/combos' },
   { label: 'Danh mục', icon: 'i-lucide-tags', to: '/admin/categories' },
   { label: 'Tag', icon: 'i-lucide-tag', to: '/admin/tags' },
   { label: 'Đơn hàng', icon: 'i-lucide-shopping-bag', to: '/admin/orders' },
