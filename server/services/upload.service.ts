@@ -18,7 +18,8 @@ interface UploadedFile {
   data: Buffer
 }
 
-export const UPLOAD_FOLDERS = ['products', 'posts', 'post-categories', 'banners', 'social-links', 'dishes'] as const
+/** `combo-collages`: ảnh ghép tự tạo của combo (app/utils/comboCollage.ts) — folder riêng để ComboForm nhận diện và thay thế thay vì cộng dồn. */
+export const UPLOAD_FOLDERS = ['products', 'posts', 'post-categories', 'banners', 'social-links', 'dishes', 'combo-collages'] as const
 export type UploadFolder = typeof UPLOAD_FOLDERS[number]
 
 /**

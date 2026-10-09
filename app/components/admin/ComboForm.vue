@@ -60,6 +60,55 @@ function removeItem(index: number) {
 }
 
 // ---------------------------------------------------------------------------
+// Ảnh ghép tự động (app/utils/comboCollage.ts) — luôn là ảnh đầu tiên của combo
+// ---------------------------------------------------------------------------
+
+const itemsSignature = computed(() => items.value.map(i => `${i.variantId}:${i.quantity}`).join('|'))
+const collageImage = computed(() => images.value.find(img => isComboCollageUrl(img.url)))
+/**
+ * Danh sách món mà ảnh ghép hiện tại được tạo từ — ảnh ghép có sẵn lúc mở form
+ * coi như khớp với danh sách món ban đầu. Khi lưu: chỉ tạo lại nếu danh sách món
+ * đã đổi so với lần ghép gần nhất; nếu admin tự xoá ảnh ghép mà không đổi món
+ * thì tôn trọng, không tạo lại.
+ */
+const collageSignature = ref<string | null>(collageImage.value ? itemsSignature.value : null)
+const generatingCollage = ref(false)
+
+async function generateCollage() {
+  generatingCollage.value = true
+  try {
+    const blob = await buildComboCollage(items.value.map(item => ({
+      imageUrl: item.image,
+      productName: item.productName,
+      unit: item.unit,
+      quantity: item.quantity,
+    })))
+    const body = new FormData()
+    body.append('file', new File([blob], `${form.slug || 'combo'}-anh-ghep.jpg`, { type: 'image/jpeg' }))
+    body.append('folder', COMBO_COLLAGE_FOLDER)
+    const res = await $fetch<{ url: string }>('/api/admin/uploads', { method: 'POST', body })
+
+    // Thay ảnh ghép cũ: ảnh chưa lưu thì xoá file ngay, ảnh đã lưu (có id) để
+    // server dọn khi bấm Lưu (giống removeImage ở ImageListUploader).
+    for (const old of images.value.filter(img => isComboCollageUrl(img.url))) {
+      if (!old.id) deleteUploadedImage(old.url)
+    }
+    images.value = [
+      { url: res.url, alt: `${form.name || 'Combo'} — ảnh ghép` },
+      ...images.value.filter(img => !isComboCollageUrl(img.url)),
+    ]
+    collageSignature.value = itemsSignature.value
+    return true
+  } catch (err) {
+    const message = (err as { data?: { message?: string } })?.data?.message ?? (err as Error)?.message ?? 'Không tạo được ảnh ghép'
+    toast.add({ title: 'Lỗi tạo ảnh ghép', description: message, color: 'error' })
+    return false
+  } finally {
+    generatingCollage.value = false
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Popup chọn sản phẩm: Danh mục -> Sản phẩm -> Đơn vị -> Số lượng
 // ---------------------------------------------------------------------------
 
@@ -139,7 +188,12 @@ function addPickedItem() {
   pickerOpen.value = false
 }
 
-function submit() {
+async function submit() {
+  // Chưa bấm "Tạo ảnh ghép" (hoặc đã đổi món sau lần ghép trước) thì tự tạo —
+  // lỗi ghép ảnh không chặn việc lưu combo, chỉ báo toast.
+  if (items.value.length && collageSignature.value !== itemsSignature.value) {
+    await generateCollage()
+  }
   emit('submit', {
     name: form.name,
     slug: form.slug,
@@ -190,11 +244,39 @@ function submit() {
           <h2 class="font-semibold text-highlighted">
             Sản phẩm trong combo
           </h2>
-          <UButton icon="i-lucide-plus" size="sm" variant="outline" @click="openPicker">
-            Thêm sản phẩm
-          </UButton>
+          <div class="flex gap-2">
+            <UButton
+              icon="i-lucide-images"
+              size="sm"
+              variant="outline"
+              color="neutral"
+              :loading="generatingCollage"
+              :disabled="!items.length || generatingCollage"
+              @click="generateCollage"
+            >
+              {{ collageImage ? 'Tạo lại ảnh ghép' : 'Tạo ảnh ghép' }}
+            </UButton>
+            <UButton icon="i-lucide-plus" size="sm" variant="outline" @click="openPicker">
+              Thêm sản phẩm
+            </UButton>
+          </div>
         </div>
       </template>
+
+      <div v-if="collageImage" class="mb-4 flex flex-wrap items-start gap-4 rounded-lg bg-elevated p-3">
+        <img :src="collageImage.url" :alt="collageImage.alt" class="w-56 max-w-full rounded-lg border border-default">
+        <div class="min-w-48 flex-1 space-y-1 text-sm">
+          <p class="font-medium text-highlighted">
+            Ảnh ghép (ảnh đại diện combo)
+          </p>
+          <p v-if="collageSignature !== itemsSignature" class="text-warning">
+            Danh sách món đã thay đổi — ảnh ghép sẽ được tạo lại khi bấm Lưu.
+          </p>
+          <p v-else class="text-muted">
+            Đã nằm ở vị trí đầu tiên trong phần Hình ảnh. Xoá ở đó nếu không muốn dùng.
+          </p>
+        </div>
+      </div>
 
       <div v-if="!items.length" class="py-6 text-center text-sm text-muted">
         Chưa có sản phẩm nào — bấm "Thêm sản phẩm" để chọn.
@@ -283,7 +365,7 @@ function submit() {
       <UButton color="neutral" variant="outline" :disabled="loading" @click="emit('cancel')">
         Huỷ
       </UButton>
-      <UButton :loading="loading" :disabled="loading || !items.length || discountInvalid" @click="submit">
+      <UButton :loading="loading || generatingCollage" :disabled="loading || generatingCollage || !items.length || discountInvalid" @click="submit">
         Lưu combo
       </UButton>
     </div>
