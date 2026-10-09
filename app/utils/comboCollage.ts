@@ -1,6 +1,6 @@
 /**
- * Ghép ảnh các sản phẩm trong combo thành 1 ảnh vuông, mỗi ô có nhãn
- * "Tên x số lượng đơn vị" ở góc dưới — vẽ bằng canvas ngay trên trình duyệt
+ * Ghép ảnh các sản phẩm trong combo thành 1 ảnh vuông, mỗi ô có nhãn 2 dòng
+ * "Tên x số lượng" / "Đơn vị: ..." ở góc dưới — vẽ bằng canvas ngay trên trình duyệt
  * admin (font hệ thống hiển thị đúng tiếng Việt, server không cần cài font/thư
  * viện ảnh), rồi upload như ảnh thường vào folder COMBO_COLLAGE_FOLDER.
  */
@@ -23,12 +23,9 @@ const GAP = 10
 const PLACEHOLDER = '/images/placeholder-fish.svg'
 const FONT_FAMILY = 'ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif'
 
-/** "Cá Ngừ x 2kg", "Mực Ống x 3 con", "Cá Thu x 2 (500g)". */
-export function collageLabel(tile: Pick<CollageTile, 'productName' | 'unit' | 'quantity'>) {
-  const unit = tile.unit.trim()
-  if (/^\d/.test(unit)) return `${tile.productName} x ${tile.quantity} (${unit})`
-  if (/^(kg|g|gr|mg|l|ml)$/i.test(unit)) return `${tile.productName} x ${tile.quantity}${unit}`
-  return `${tile.productName} x ${tile.quantity} ${unit}`
+/** Nhãn 2 dòng: ["Cá Ngừ x 2", "Đơn vị: kg"]. */
+export function collageLabel(tile: Pick<CollageTile, 'productName' | 'unit' | 'quantity'>): string[] {
+  return [`${tile.productName} x ${tile.quantity}`, `Đơn vị: ${tile.unit.trim()}`]
 }
 
 /** Số ô mỗi hàng, hàng trên ít ô hơn: 4 -> [2,2], 5 -> [2,3], 7 -> [3,4]. */
@@ -66,18 +63,23 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: numb
   ctx.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, x, y, w, h)
 }
 
-function drawLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, w: number, h: number) {
+function drawLabel(ctx: CanvasRenderingContext2D, lines: string[], x: number, y: number, w: number, h: number) {
   const margin = Math.round(Math.min(w, h) * 0.04)
   const maxWidth = w - margin * 2
-  let fontSize = Math.round(Math.min(Math.max(Math.min(w, h) * 0.085, 22), 56))
-  ctx.font = `bold ${fontSize}px ${FONT_FAMILY}`
+  let fontSize = Math.round(Math.min(Math.max(Math.min(w, h) * 0.075, 20), 50))
+  // Dòng đầu (tên x số lượng) đậm và to hơn dòng đơn vị.
+  const fonts = () => [`bold ${fontSize}px ${FONT_FAMILY}`, `600 ${Math.round(fontSize * 0.8)}px ${FONT_FAMILY}`]
   const padX = () => Math.round(fontSize * 0.45)
-  while (fontSize > 14 && ctx.measureText(text).width + padX() * 2 > maxWidth) {
-    fontSize -= 2
-    ctx.font = `bold ${fontSize}px ${FONT_FAMILY}`
-  }
-  const boxW = Math.min(ctx.measureText(text).width + padX() * 2, maxWidth)
-  const boxH = Math.round(fontSize * 1.6)
+  const widestLine = () => Math.max(...lines.map((line, i) => {
+    ctx.font = fonts()[Math.min(i, 1)]!
+    return ctx.measureText(line).width
+  }))
+  while (fontSize > 14 && widestLine() + padX() * 2 > maxWidth) fontSize -= 2
+
+  const lineHeights = lines.map((_, i) => Math.round((i === 0 ? fontSize : fontSize * 0.8) * 1.3))
+  const padY = Math.round(fontSize * 0.3)
+  const boxW = Math.min(widestLine() + padX() * 2, maxWidth)
+  const boxH = lineHeights.reduce((sum, lh) => sum + lh, 0) + padY * 2
   const boxX = x + margin
   const boxY = y + h - margin - boxH
 
@@ -88,7 +90,12 @@ function drawLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: nu
 
   ctx.fillStyle = '#ffffff'
   ctx.textBaseline = 'middle'
-  ctx.fillText(text, boxX + padX(), boxY + boxH / 2, boxW - padX() * 2)
+  let lineY = boxY + padY
+  lines.forEach((line, i) => {
+    ctx.font = fonts()[Math.min(i, 1)]!
+    ctx.fillText(line, boxX + padX(), lineY + lineHeights[i]! / 2, boxW - padX() * 2)
+    lineY += lineHeights[i]!
+  })
 }
 
 export async function buildComboCollage(tiles: CollageTile[]): Promise<Blob> {

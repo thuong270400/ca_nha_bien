@@ -73,6 +73,7 @@ const collageImage = computed(() => images.value.find(img => isComboCollageUrl(i
  */
 const collageSignature = ref<string | null>(collageImage.value ? itemsSignature.value : null)
 const generatingCollage = ref(false)
+const collageZoomOpen = ref(false)
 
 async function generateCollage() {
   generatingCollage.value = true
@@ -264,7 +265,17 @@ async function submit() {
       </template>
 
       <div v-if="collageImage" class="mb-4 flex flex-wrap items-start gap-4 rounded-lg bg-elevated p-3">
-        <img :src="collageImage.url" :alt="collageImage.alt" class="w-56 max-w-full rounded-lg border border-default">
+        <button
+          type="button"
+          class="group relative w-56 max-w-full cursor-zoom-in overflow-hidden rounded-lg border border-default"
+          title="Bấm để xem lớn"
+          @click="collageZoomOpen = true"
+        >
+          <img :src="collageImage.url" :alt="collageImage.alt" class="w-full transition group-hover:scale-105">
+          <span class="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-1 text-white">
+            <UIcon name="i-lucide-zoom-in" class="size-4" />
+          </span>
+        </button>
         <div class="min-w-48 flex-1 space-y-1 text-sm">
           <p class="font-medium text-highlighted">
             Ảnh ghép (ảnh đại diện combo)
@@ -369,6 +380,21 @@ async function submit() {
         Lưu combo
       </UButton>
     </div>
+
+    <UModal
+      v-model:open="collageZoomOpen"
+      title="Xem ảnh ghép"
+      :ui="{ content: 'sm:max-w-4xl' }"
+    >
+      <template #body>
+        <img
+          v-if="collageImage"
+          :src="collageImage.url"
+          :alt="collageImage.alt"
+          class="mx-auto max-h-[80vh] w-auto rounded-lg"
+        >
+      </template>
+    </UModal>
 
     <UModal v-model:open="pickerOpen" title="Thêm sản phẩm vào combo">
       <template #body>
