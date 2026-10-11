@@ -28,12 +28,44 @@ export function collageLabel(tile: Pick<CollageTile, 'productName' | 'unit' | 'q
   return [`${tile.productName} x ${tile.quantity}`, `Đơn vị: ${tile.unit.trim()}`]
 }
 
-/** Số ô mỗi hàng, hàng trên ít ô hơn: 4 -> [2,2], 5 -> [2,3], 7 -> [3,4]. */
-function rowLayout(count: number): number[] {
-  const rows = count <= 3 ? 1 : count <= 8 ? 2 : Math.ceil(count / 4)
-  const base = Math.floor(count / rows)
-  const extra = count % rows
-  return Array.from({ length: rows }, (_, i) => base + (i >= rows - extra ? 1 : 0))
+interface Rect { x: number, y: number, w: number, h: number }
+
+/**
+ * Chia khung vuông thành `count` ô gần vuông, chia cả ngang lẫn dọc:
+ * - 1: cả khung
+ * - 2: 2 cột
+ * - 3: 1 ô lớn bên trái + 2 ô xếp dọc bên phải
+ * - 4-8: 2 hàng, hàng trên ít ô hơn (4 -> 2+2, 5 -> 2+3, 6 -> 3+3, 7 -> 3+4, 8 -> 4+4)
+ * - >= 9: số hàng ~ căn bậc 2 (9 -> 3+3+3, 10 -> 3+3+4)
+ * Với 2-3 món chia theo cột (các ô xếp dọc trong mỗi cột), từ 4 món trở lên chia theo hàng.
+ */
+function collageRects(count: number): Rect[] {
+  const split = (parts: number) => (SIZE - GAP * (parts + 1)) / parts
+  const byColumns = count <= 3
+  let groups: number[]
+  if (count === 1) groups = [1]
+  else if (count === 2) groups = [1, 1]
+  else if (count === 3) groups = [1, 2]
+  else {
+    const rows = count <= 8 ? 2 : Math.round(Math.sqrt(count))
+    const base = Math.floor(count / rows)
+    const extra = count % rows
+    groups = Array.from({ length: rows }, (_, i) => base + (i >= rows - extra ? 1 : 0))
+  }
+
+  const rects: Rect[] = []
+  const groupSize = split(groups.length)
+  groups.forEach((cells, g) => {
+    const cellSize = split(cells)
+    const groupOffset = GAP + g * (groupSize + GAP)
+    for (let c = 0; c < cells; c++) {
+      const cellOffset = GAP + c * (cellSize + GAP)
+      rects.push(byColumns
+        ? { x: groupOffset, y: cellOffset, w: groupSize, h: cellSize }
+        : { x: cellOffset, y: groupOffset, w: cellSize, h: groupSize })
+    }
+  })
+  return rects
 }
 
 function loadImage(url: string): Promise<HTMLImageElement> {
@@ -110,19 +142,9 @@ export async function buildComboCollage(tiles: CollageTile[]): Promise<Blob> {
   ctx.fillRect(0, 0, SIZE, SIZE)
 
   const images = await Promise.all(tiles.map(t => loadTileImage(t.imageUrl)))
-  const rows = rowLayout(tiles.length)
-  const rowH = (SIZE - GAP * (rows.length + 1)) / rows.length
-
-  let index = 0
-  rows.forEach((cols, r) => {
-    const cellW = (SIZE - GAP * (cols + 1)) / cols
-    const y = GAP + r * (rowH + GAP)
-    for (let c = 0; c < cols; c++) {
-      const x = GAP + c * (cellW + GAP)
-      drawCover(ctx, images[index]!, x, y, cellW, rowH)
-      drawLabel(ctx, collageLabel(tiles[index]!), x, y, cellW, rowH)
-      index++
-    }
+  collageRects(tiles.length).forEach((rect, i) => {
+    drawCover(ctx, images[i]!, rect.x, rect.y, rect.w, rect.h)
+    drawLabel(ctx, collageLabel(tiles[i]!), rect.x, rect.y, rect.w, rect.h)
   })
 
   return new Promise((resolve, reject) => {
