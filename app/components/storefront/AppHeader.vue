@@ -35,9 +35,10 @@ async function logout() {
           <span class="pr-16" aria-hidden="true">Cá tươi mới tại ghe mỗi ngày – giao tận nơi.</span>
         </div>
       </div>
-      <NuxtLink to="/tra-cuu-don-hang" class="hidden shrink-0 items-center gap-1.5 font-medium hover:text-primary sm:flex">
+      <NuxtLink to="/tra-cuu-don-hang" class="flex shrink-0 items-center gap-1.5 font-medium hover:text-primary">
         <UIcon name="i-lucide-package-search" class="size-3.5" />
-        Tra cứu đơn hàng
+        <span class="sm:hidden">Tra đơn</span>
+        <span class="hidden sm:inline">Tra cứu đơn hàng</span>
       </NuxtLink>
       <a :href="`tel:${contact.hotline}`" class="flex shrink-0 items-center gap-1.5 font-medium text-primary hover:underline">
         <UIcon name="i-lucide-phone" class="size-3.5" />
@@ -144,6 +145,11 @@ async function logout() {
         <StorefrontSearchBox size="md" />
       </div>
       <UNavigationMenu :items="navItems" orientation="vertical" />
+      <USeparator class="my-3" />
+      <UNavigationMenu
+        :items="[{ label: 'Tra cứu đơn hàng', icon: 'i-lucide-package-search', to: '/tra-cuu-don-hang' }]"
+        orientation="vertical"
+      />
     </template>
   </UHeader>
 </template>
