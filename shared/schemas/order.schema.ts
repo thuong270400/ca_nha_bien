@@ -33,6 +33,14 @@ export const paymentStatusUpdateSchema = z.object({
   paymentStatus: z.enum(['PENDING', 'DEPOSIT_PAID', 'PAID', 'FAILED', 'REFUNDED']),
 })
 
+// Tra cứu đơn công khai (/tra-cuu-don-hang) — bắt buộc kèm SĐT người nhận vì
+// mã đơn chỉ có 4 số ngẫu nhiên/ngày, đoán được nếu chỉ cần mã.
+export const trackOrderSchema = z.object({
+  orderNumber: z.string().trim().min(1, 'Vui lòng nhập mã đơn hàng').max(40),
+  phone: z.string().trim().regex(/^0\d{9,10}$/, 'Số điện thoại không hợp lệ'),
+})
+
 export type CreateOrderInput = z.infer<typeof createOrderSchema>
 export type OrderStatusUpdateInput = z.infer<typeof orderStatusUpdateSchema>
 export type PaymentStatusUpdateInput = z.infer<typeof paymentStatusUpdateSchema>
+export type TrackOrderInput = z.infer<typeof trackOrderSchema>

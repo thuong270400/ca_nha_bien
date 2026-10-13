@@ -1,4 +1,4 @@
-import type { CreateOrderInput } from '#shared/schemas/order.schema'
+import type { CreateOrderInput, TrackOrderInput } from '#shared/schemas/order.schema'
 import { resolveAvailabilityDays } from '#shared/utils/sourcing'
 import type { SepayWebhookPayload } from '../utils/schemas/sepay.schema'
 import { refreshCombos } from './combo-sync.service'
@@ -278,12 +278,28 @@ export async function getOrderById(id: string, ctx: OrderContext & { guestAccess
   if (!order) throw Errors.notFound('Không tìm thấy đơn hàng')
 
   const ownedByUser = Boolean(ctx.userId) && order.userId === ctx.userId
-  const ownedByGuestSession = !order.userId && ctx.guestAccessGranted
-  if (!ctx.isAdmin && !ownedByUser && !ownedByGuestSession) {
+  // guest_order_ids cookie: đơn vừa đặt (khách vãng lai) hoặc đơn đã tra cứu
+  // đúng mã + SĐT qua findOrderIdForTracking — áp dụng cả cho đơn có tài khoản.
+  if (!ctx.isAdmin && !ownedByUser && !ctx.guestAccessGranted) {
     throw Errors.forbidden('Bạn không có quyền xem đơn hàng này')
   }
 
   return order
+}
+
+/**
+ * Tra cứu đơn công khai: chỉ trả id khi cả mã đơn lẫn SĐT người nhận khớp.
+ * Sai mã hay sai SĐT đều trả cùng 1 lỗi để không lộ mã đơn nào có tồn tại.
+ */
+export async function findOrderIdForTracking(input: TrackOrderInput) {
+  const orderNumber = extractOrderNumber(input.orderNumber)
+  const order = orderNumber
+    ? await prisma.order.findUnique({ where: { orderNumber }, select: { id: true, recipientPhone: true } })
+    : null
+  if (!order || order.recipientPhone.replace(/\D/g, '') !== input.phone.replace(/\D/g, '')) {
+    throw Errors.notFound('Không tìm thấy đơn hàng khớp với mã đơn và số điện thoại đã nhập')
+  }
+  return order.id
 }
 
 export async function updateOrderStatus(id: string, status: OrderStatus) {

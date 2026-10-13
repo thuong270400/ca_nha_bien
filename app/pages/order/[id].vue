@@ -5,9 +5,13 @@ import { formatDays, groupByAvailabilityDays } from '#shared/utils/sourcing'
 const route = useRoute()
 const id = route.params.id as string
 
-const { data: order, refresh } = await useFetch<OrderView>(`/api/orders/${id}`, { key: `order-${id}` })
+const { data: order, refresh, error } = await useFetch<OrderView>(`/api/orders/${id}`, { key: `order-${id}` })
 
-if (!order.value) {
+// Chưa có quyền xem (link đơn được chia sẻ sang trình duyệt khác) — chuyển
+// sang trang tra cứu để xác minh bằng mã đơn + SĐT.
+if (error.value?.statusCode === 403) {
+  await navigateTo('/tra-cuu-don-hang')
+} else if (!order.value) {
   throw createError({ statusCode: 404, statusMessage: 'Không tìm thấy đơn hàng', fatal: true })
 }
 
@@ -50,8 +54,8 @@ const qrImageUrl = computed(() => {
   })
 })
 
-// Hoá đơn chỉ mở được khi đơn đã thanh toán đủ (vd. ngay sau khi webhook SePay
-// xác nhận chuyển khoản thành công).
+// Hoá đơn mở được ở mọi trạng thái — đơn chưa thanh toán thì hoá đơn hiện kèm
+// QR (OrderBillModal tự bật/tắt), in hoặc lưu PDF từ nút trong modal.
 const billOpen = ref(false)
 
 useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Biển` })
@@ -68,9 +72,14 @@ useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Bi
           Đặt lúc {{ new Date(order.createdAt).toLocaleString('vi-VN') }}
         </p>
       </div>
-      <UBadge :color="orderStatusColors[order.status]" size="lg">
-        {{ orderStatusLabels[order.status] }}
-      </UBadge>
+      <div class="flex items-center gap-3">
+        <UBadge :color="orderStatusColors[order.status]" size="lg">
+          {{ orderStatusLabels[order.status] }}
+        </UBadge>
+        <UButton icon="i-lucide-receipt-text" variant="outline" @click="billOpen = true">
+          Xuất hoá đơn
+        </UButton>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
@@ -144,15 +153,6 @@ useSeoMeta({ title: () => `Đơn hàng ${order.value?.orderNumber} - Cá Nhà Bi
           <p class="text-sm text-muted">
             {{ paymentMethodLabels[order.paymentMethod] }}
           </p>
-          <UButton
-            v-if="order.paymentStatus === 'PAID'"
-            class="mt-3"
-            block
-            icon="i-lucide-receipt-text"
-            @click="billOpen = true"
-          >
-            Xem hoá đơn
-          </UButton>
 
           <div
             v-if="order.paymentMethod === 'BANK_TRANSFER' && (order.paymentStatus === 'PENDING' || order.paymentStatus === 'DEPOSIT_PAID')"

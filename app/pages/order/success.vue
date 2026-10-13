@@ -28,6 +28,11 @@ useSeoMeta({ title: 'Đặt hàng thành công - Cá Nhà Biển' })
       Mã đơn hàng <span class="font-medium text-highlighted">{{ order.orderNumber }}</span>.
       Chúng tôi sẽ liên hệ xác nhận trong thời gian sớm nhất.
     </p>
+    <p v-if="order" class="mt-1 text-sm text-muted">
+      Lưu lại mã đơn để
+      <NuxtLink :to="`/tra-cuu-don-hang?code=${order.orderNumber}`" class="text-primary hover:underline">tra cứu đơn hàng</NuxtLink>
+      bất cứ lúc nào (cần kèm số điện thoại người nhận).
+    </p>
     <p v-if="order" class="mt-1 text-lg font-semibold text-primary">
       {{ formatVnd(order.total) }}
     </p>
