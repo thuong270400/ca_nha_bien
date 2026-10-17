@@ -37,6 +37,7 @@ const variantId = ref<string>()
 const name = ref('')
 const cookingTips = ref('')
 const brand = ref('')
+const showPrice = ref(true)
 
 const product = computed(() => products.value.find(p => p.id === productId.value))
 const variant = computed(() => product.value?.variants.find(v => v.id === variantId.value))
@@ -77,7 +78,7 @@ async function render() {
     const blob = await buildFishPoster({
       imageUrl: imageUrl.value,
       name: name.value,
-      priceLabel: priceLabel.value,
+      priceLabel: showPrice.value ? priceLabel.value : '',
       cookingTips: cookingTips.value,
       brand: brand.value,
     })
@@ -92,7 +93,7 @@ async function render() {
   }
 }
 
-watchDebounced([product, imageUrl, name, priceLabel, cookingTips, brand], render, { debounce: 300 })
+watchDebounced([product, imageUrl, name, priceLabel, showPrice, cookingTips, brand], render, { debounce: 300 })
 
 onBeforeUnmount(() => {
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
@@ -152,10 +153,13 @@ function download() {
           </UFormField>
 
           <UFormField label="Giá / đơn vị">
+            <template #hint>
+              <USwitch v-model="showPrice" label="Hiện giá trên ảnh" :disabled="!product" />
+            </template>
             <USelect
               v-model="variantId"
               :items="variantItems"
-              :disabled="!product"
+              :disabled="!product || !showPrice"
               placeholder="Chọn đơn vị"
               class="w-full"
             />
