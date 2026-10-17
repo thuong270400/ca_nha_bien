@@ -18,6 +18,14 @@ const links = [
   { label: 'Bài viết', icon: 'i-lucide-newspaper', to: '/admin/posts' },
   { label: 'Liên hệ', icon: 'i-lucide-inbox', to: '/admin/contacts' },
   { label: 'Báo cáo', icon: 'i-lucide-bar-chart-3', to: '/admin/reports' },
+  {
+    label: 'Tiện ích',
+    icon: 'i-lucide-wand-sparkles',
+    defaultOpen: true,
+    children: [
+      { label: 'Tạo ảnh cá bản quyền', icon: 'i-lucide-image-plus', to: '/admin/tools/fish-image' },
+    ],
+  },
   { label: 'Cài đặt', icon: 'i-lucide-settings', to: '/admin/settings' },
 ]
 
